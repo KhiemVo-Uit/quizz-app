@@ -154,50 +154,136 @@ class StatisticsView:
         """Show detailed attempt history"""
         dialog = tk.Toplevel(self.parent)
         dialog.title(f"Chi tiết - {quiz.title}")
-        dialog.geometry("700x500")
+        dialog.geometry("1000x650")
         dialog.transient(self.parent)
+        
+        # Header
+        header_frame = ttk.Frame(dialog)
+        header_frame.pack(fill=tk.X, padx=20, pady=15)
+        
+        ttk.Label(header_frame, text=f"📋 {quiz.title}",
+                 font=(FONT_FAMILY, 16, 'bold'),
+                 bootstyle="primary").pack(anchor=tk.W)
+        
+        ttk.Label(header_frame, text="Danh sách các lượt thi",
+                 font=(FONT_FAMILY, 10),
+                 bootstyle="secondary").pack(anchor=tk.W, pady=5)
         
         attempts = Attempt.get_by_quiz(quiz.id)
         
+        # Statistics summary
+        if attempts:
+            summary_frame = ttk.Frame(dialog)
+            summary_frame.pack(fill=tk.X, padx=20, pady=10)
+            
+            stats = Attempt.get_statistics(quiz.id)
+            
+            summary_items = [
+                ("👥 Tổng lượt thi:", str(stats['total_attempts']), "primary"),
+                ("📊 Điểm TB:", f"{stats['avg_score']:.1f}", "info"),
+                ("🏆 Cao nhất:", f"{stats['max_score']:.1f}", "success"),
+                ("📉 Thấp nhất:", f"{stats['min_score']:.1f}", "warning")
+            ]
+            
+            for i, (label, value, style) in enumerate(summary_items):
+                item_frame = ttk.Frame(summary_frame)
+                item_frame.pack(side=tk.LEFT, padx=15)
+                
+                ttk.Label(item_frame, text=label,
+                         font=(FONT_FAMILY, 9),
+                         bootstyle="secondary").pack(side=tk.LEFT, padx=5)
+                ttk.Label(item_frame, text=value,
+                         font=(FONT_FAMILY, 11, 'bold'),
+                         bootstyle=style).pack(side=tk.LEFT)
+        
+        # Separator
+        ttk.Separator(dialog, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=20, pady=10)
+        
         # Create treeview with better styling
         tree_frame = ttk.Frame(dialog)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         columns = ('student', 'score', 'correct', 'time', 'date')
-        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=20)
         
-        tree.heading('student', text='Sinh viên', anchor=tk.W)
-        tree.heading('score', text='Điểm', anchor=tk.CENTER)
-        tree.heading('correct', text='Số câu đúng', anchor=tk.CENTER)
-        tree.heading('time', text='Thời gian', anchor=tk.CENTER)
-        tree.heading('date', text='Ngày thi', anchor=tk.W)
+        # Style for treeview
+        style = ttk.Style()
+        style.configure("Treeview", rowheight=30, font=(FONT_FAMILY, 10))
+        style.configure("Treeview.Heading", font=(FONT_FAMILY, 11, 'bold'))
         
-        tree.column('student', width=150, anchor=tk.W)
-        tree.column('score', width=80, anchor=tk.CENTER)
-        tree.column('correct', width=100, anchor=tk.CENTER)
-        tree.column('time', width=90, anchor=tk.CENTER)
-        tree.column('date', width=200, anchor=tk.W)
+        tree.heading('student', text='👤 Sinh viên', anchor=tk.W)
+        tree.heading('score', text='📊 Điểm', anchor=tk.CENTER)
+        tree.heading('correct', text='✓ Số câu đúng', anchor=tk.CENTER)
+        tree.heading('time', text='⏱ Thời gian', anchor=tk.CENTER)
+        tree.heading('date', text='📅 Ngày thi', anchor=tk.W)
+        
+        tree.column('student', width=200, anchor=tk.W)
+        tree.column('score', width=100, anchor=tk.CENTER)
+        tree.column('correct', width=140, anchor=tk.CENTER)
+        tree.column('time', width=120, anchor=tk.CENTER)
+        tree.column('date', width=300, anchor=tk.W)
+        
+        # Configure tags for colors
+        tree.tag_configure('high', background='#d4edda', foreground='#155724')
+        tree.tag_configure('medium', background='#fff3cd', foreground='#856404')
+        tree.tag_configure('low', background='#f8d7da', foreground='#721c24')
+        tree.tag_configure('oddrow', background='#f8f9fa')
+        tree.tag_configure('evenrow', background='#ffffff')
         
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         
-        for attempt in attempts:
+        for idx, attempt in enumerate(attempts):
             time_str = ""
             if attempt.time_taken:
                 minutes = attempt.time_taken // 60
                 seconds = attempt.time_taken % 60
                 time_str = f"{minutes}:{seconds:02d}"
             
+            # Determine row color based on score
+            score_tag = ''
+            if attempt.score >= 8:
+                score_tag = 'high'
+            elif attempt.score >= 5:
+                score_tag = 'medium'
+            else:
+                score_tag = 'low'
+            
+            row_tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
+            
             tree.insert('', tk.END, values=(
                 attempt.student_name,
-                f"{attempt.score:.0f}",
+                f"{attempt.score:.1f}/10",
                 f"{attempt.correct_answers}/{attempt.total_questions}",
                 time_str,
                 attempt.completed_at or "Chưa hoàn thành"
-            ))
+            ), tags=(score_tag, row_tag))
         
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Footer with legend
+        footer = ttk.Frame(dialog)
+        footer.pack(fill=tk.X, padx=20, pady=15)
+        
+        ttk.Label(footer, text="Chú thích:",
+                 font=(FONT_FAMILY, 9, 'bold')).pack(anchor=tk.W)
+        
+        legend_frame = ttk.Frame(footer)
+        legend_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(legend_frame, text="🟢 Giỏi (≥8)   ",
+                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(legend_frame, text="🟡 Trung bình (5-7.9)   ",
+                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(legend_frame, text="🔴 Yếu (<5)",
+                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+        
+        # Close button
+        ttk.Button(footer, text="✖ Đóng",
+                  command=dialog.destroy,
+                  bootstyle="secondary",
+                  width=15).pack(side=tk.RIGHT, pady=10)
 
     def show_question_analysis(self, parent):
         """Show question-level analysis"""
@@ -289,62 +375,80 @@ class StatisticsView:
 
     def show_difficulty_analysis(self, parent):
         """Show difficulty analysis"""
-        ttk.Label(parent, text="Phân tích độ khó thực tế",
-                 font=(FONT_FAMILY, 14, 'bold')).pack(pady=20)
+        # Header with better styling
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill=tk.X, padx=20, pady=15)
+        
+        ttk.Label(header_frame, text="🎯 Phân tích độ khó thực tế",
+                 font=(FONT_FAMILY, 16, 'bold'),
+                 bootstyle="primary").pack(anchor=tk.W)
+        
+        ttk.Label(header_frame, text="So sánh độ khó được gán với tỷ lệ trả lời đúng thực tế",
+                 font=(FONT_FAMILY, 10),
+                 bootstyle="secondary").pack(anchor=tk.W, pady=5)
         
         difficulty_data = QuizController.analyze_difficulty()
         
         if not difficulty_data:
-            ttk.Label(parent, text="Chưa có dữ liệu để phân tích",
-                     font=(FONT_FAMILY, 12)).pack(pady=20)
+            empty_frame = ttk.Frame(parent)
+            empty_frame.pack(expand=True)
+            
+            ttk.Label(empty_frame, text="📊",
+                     font=(FONT_FAMILY, 48)).pack(pady=20)
+            ttk.Label(empty_frame, text="Chưa có dữ liệu để phân tích",
+                     font=(FONT_FAMILY, 12)).pack(pady=10)
             return
         
-        # Create scrollable frame
-        canvas = tk.Canvas(parent)
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        # Create main container with border
+        main_container = ttk.Frame(parent)
+        main_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        # Create frame for treeview
+        tree_frame = ttk.Frame(main_container)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Enable mousewheel scrolling only when hovering over canvas
-        def _on_mousewheel_da(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
-        def _bind_mousewheel_da(event):
-            canvas.bind_all("<MouseWheel>", _on_mousewheel_da)
-        
-        def _unbind_mousewheel_da(event):
-            canvas.unbind_all("<MouseWheel>")
-        
-        canvas.bind("<Enter>", _bind_mousewheel_da)
-        canvas.bind("<Leave>", _unbind_mousewheel_da)
-        
-        # Create treeview
+        # Create treeview with larger font
         columns = ('id', 'labeled', 'success_rate', 'total', 'question')
-        tree = ttk.Treeview(scrollable_frame, columns=columns, show='headings', height=20)
+        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=25)
         
-        tree.heading('id', text='ID')
-        tree.heading('labeled', text='Độ khó gán')
-        tree.heading('success_rate', text='Tỷ lệ đúng')
-        tree.heading('total', text='Tổng câu TL')
-        tree.heading('question', text='Câu hỏi')
+        # Configure headings with better styling
+        tree.heading('id', text='ID', anchor=tk.CENTER)
+        tree.heading('labeled', text='Độ khó gán', anchor=tk.CENTER)
+        tree.heading('success_rate', text='Tỷ lệ đúng', anchor=tk.CENTER)
+        tree.heading('total', text='Tổng câu TL', anchor=tk.CENTER)
+        tree.heading('question', text='Câu hỏi', anchor=tk.W)
         
-        tree.column('id', width=50)
-        tree.column('labeled', width=100)
-        tree.column('success_rate', width=100)
-        tree.column('total', width=100)
-        tree.column('question', width=400)
+        # Wider columns for better readability
+        tree.column('id', width=80, anchor=tk.CENTER)
+        tree.column('labeled', width=150, anchor=tk.CENTER)
+        tree.column('success_rate', width=120, anchor=tk.CENTER)
+        tree.column('total', width=120, anchor=tk.CENTER)
+        tree.column('question', width=600, anchor=tk.W)
+        
+        # Configure tags for colors
+        tree.tag_configure('easy', background='#d4edda')
+        tree.tag_configure('medium', background='#fff3cd')
+        tree.tag_configure('hard', background='#f8d7da')
+        tree.tag_configure('oddrow', background='#f8f9fa')
+        tree.tag_configure('evenrow', background='#ffffff')
         
         difficulty_names = {1: 'Dễ', 2: 'Trung bình', 3: 'Khó'}
         
-        for data in difficulty_data:
-            q_text = data['question_text'][:50] + "..." if len(data['question_text']) > 50 else data['question_text']
+        # Insert data with alternating row colors and difficulty colors
+        for idx, data in enumerate(difficulty_data):
+            q_text = data['question_text'][:80] + "..." if len(data['question_text']) > 80 else data['question_text']
+            
+            # Determine tag based on labeled difficulty
+            difficulty_tag = ''
+            if data['labeled_difficulty'] == 1:
+                difficulty_tag = 'easy'
+            elif data['labeled_difficulty'] == 2:
+                difficulty_tag = 'medium'
+            elif data['labeled_difficulty'] == 3:
+                difficulty_tag = 'hard'
+            
+            # Alternate row colors
+            row_tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
             
             tree.insert('', tk.END, values=(
                 data['id'],
@@ -352,16 +456,53 @@ class StatisticsView:
                 f"{data['success_rate']:.1f}%",
                 data['total_answers'],
                 q_text
-            ))
+            ), tags=(difficulty_tag, row_tag))
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        
+        # Enable mousewheel scrolling
+        def _on_mousewheel_da(event):
+            tree.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        def _bind_mousewheel_da(event):
+            tree.bind_all("<MouseWheel>", _on_mousewheel_da)
+        
+        def _unbind_mousewheel_da(event):
+            tree.unbind_all("<MouseWheel>")
+        
+        tree.bind("<Enter>", _bind_mousewheel_da)
+        tree.bind("<Leave>", _unbind_mousewheel_da)
         
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Legend
+        # Legend with color indicators
         legend = ttk.Frame(parent)
-        legend.pack(fill=tk.X, padx=20, pady=10)
+        legend.pack(fill=tk.X, padx=20, pady=15)
         
-        ttk.Label(legend, text="Ghi chú: Câu hỏi được sắp xếp từ khó nhất (tỷ lệ đúng thấp) đến dễ nhất",
-                 font=(FONT_FAMILY, 9, 'italic')).pack()
+        legend_title = ttk.Label(legend, text="Chú thích:",
+                                 font=(FONT_FAMILY, 10, 'bold'))
+        legend_title.pack(anchor=tk.W)
+        
+        legend_items = ttk.Frame(legend)
+        legend_items.pack(fill=tk.X, pady=5)
+        
+        # Color legend
+        colors_frame = ttk.Frame(legend_items)
+        colors_frame.pack(side=tk.LEFT, padx=10)
+        
+        ttk.Label(colors_frame, text="🟢 Dễ   ", 
+                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(colors_frame, text="🟡 Trung bình   ", 
+                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(colors_frame, text="🔴 Khó", 
+                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+        
+        # Note
+        note_label = ttk.Label(legend, 
+                              text="💡 Câu hỏi được sắp xếp từ khó nhất (tỷ lệ đúng thấp) đến dễ nhất",
+                              font=(FONT_FAMILY, 9, 'italic'),
+                              bootstyle="secondary")
+        note_label.pack(anchor=tk.W, pady=5)
