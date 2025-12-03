@@ -33,80 +33,136 @@ class QuizView:
         header = ttk.Frame(self.parent)
         header.pack(fill=tk.X, padx=30, pady=20)
         
-        ttk.Label(header, text="📝 Danh sách bài thi", 
+        ttk.Label(header, text="📝 Bài thi Kỹ thuật lập trình Python", 
                  font=(FONT_FAMILY, 20, 'bold'),
                  bootstyle="primary").pack(side=tk.LEFT)
         
-        # Quiz list with better container
+        # Main container with centered content
         container = ttk.Frame(self.parent)
         container.pack(fill=tk.BOTH, expand=True, padx=30, pady=10)
         
-        list_frame = ttk.Frame(container)
-        list_frame.pack(fill=tk.BOTH, expand=True)
+        # Center frame
+        center_frame = ttk.Frame(container)
+        center_frame.pack(expand=True)
         
-        quizzes = Quiz.get_all()
+        # Quiz card
+        card = ttk.Frame(center_frame, bootstyle="light")
+        card.pack(fill=tk.X, pady=20, padx=50)
         
-        if not quizzes:
-            empty_frame = ttk.Frame(list_frame)
-            empty_frame.pack(expand=True)
-            
-            ttk.Label(empty_frame, text="📋",
-                     font=(FONT_FAMILY, 48)).pack(pady=20)
-            ttk.Label(empty_frame, text="Chưa có bài thi nào",
-                     font=(FONT_FAMILY, 16)).pack(pady=10)
-            ttk.Button(empty_frame, text="🎯 Tạo bài thi mẫu",
-                      command=self.create_sample_quiz,
-                      bootstyle="success",
-                      width=20).pack(pady=20)
-            return
-        
-        # Create quiz cards
-        for quiz in quizzes:
-            self.create_quiz_card(list_frame, quiz)
-
-    def create_quiz_card(self, parent, quiz):
-        """Create a card for each quiz"""
-        card = ttk.Frame(parent, bootstyle="light")
-        card.pack(fill=tk.X, pady=8, padx=5)
-        
-        # Inner card with border
         inner = ttk.Frame(card, relief=tk.SOLID, borderwidth=1)
         inner.pack(fill=tk.BOTH, expand=True)
         
         info_frame = ttk.Frame(inner)
-        info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20, pady=15)
+        info_frame.pack(padx=40, pady=30)
         
-        # Title with icon
-        ttk.Label(info_frame, text=f"📚 {quiz.title}",
-                 font=(FONT_FAMILY, 14, 'bold'),
-                 bootstyle="primary").pack(anchor=tk.W)
+        # Title
+        ttk.Label(info_frame, text="📚 Kỹ thuật lập trình Python",
+                 font=(FONT_FAMILY, 16, 'bold'),
+                 bootstyle="primary").pack(pady=(0, 10))
         
         # Description
-        ttk.Label(info_frame, text=quiz.description or "Không có mô tả",
+        ttk.Label(info_frame, text="Bài thi gồm 30 câu hỏi ngẫu nhiên",
+                 font=(FONT_FAMILY, 11),
+                 bootstyle="secondary").pack(pady=5)
+        
+        ttk.Label(info_frame, text="10 câu dễ • 10 câu trung bình • 10 câu khó",
                  font=(FONT_FAMILY, 10),
-                 bootstyle="secondary").pack(anchor=tk.W, pady=(5, 8))
+                 bootstyle="info").pack(pady=5)
         
         # Info badges
         info_container = ttk.Frame(info_frame)
-        info_container.pack(anchor=tk.W)
+        info_container.pack(pady=(15, 20))
         
         ttk.Label(info_container, 
-                 text=f"⏱ {quiz.time_limit//60} phút",
-                 font=(FONT_FAMILY, 9),
-                 bootstyle="info").pack(side=tk.LEFT, padx=(0, 15))
+                 text="⏱ 45 phút",
+                 font=(FONT_FAMILY, 11),
+                 bootstyle="info").pack(side=tk.LEFT, padx=15)
         ttk.Label(info_container, 
-                 text=f"📝 {quiz.total_questions} câu",
-                 font=(FONT_FAMILY, 9),
-                 bootstyle="info").pack(side=tk.LEFT)
+                 text="📝 30 câu",
+                 font=(FONT_FAMILY, 11),
+                 bootstyle="info").pack(side=tk.LEFT, padx=15)
         
-        # Button
-        btn_frame = ttk.Frame(inner)
-        btn_frame.pack(side=tk.RIGHT, padx=20, pady=15)
-        
-        ttk.Button(btn_frame, text="Bắt đầu làm bài",
-                  command=lambda q=quiz: self.start_quiz(q),
+        # Start button
+        ttk.Button(info_frame, text="🚀 Bắt đầu làm bài",
+                  command=self.start_dynamic_quiz,
                   bootstyle="success",
-                  width=15).pack()
+                  width=20).pack(pady=10)
+
+    def start_dynamic_quiz(self):
+        """Start quiz by creating new random questions each time"""
+        # Check if enough questions exist in database
+        from models.question import Question
+        
+        total_questions = Question.count()
+        easy_count = len(Question.get_by_difficulty(1))
+        medium_count = len(Question.get_by_difficulty(2))
+        hard_count = len(Question.get_by_difficulty(3))
+        
+        # If not enough questions, create sample questions automatically
+        if easy_count < 10 or medium_count < 10 or hard_count < 10:
+            try:
+                from utils.sample_data import create_sample_questions_and_quizzes
+                create_sample_questions_and_quizzes()
+            except Exception as e:
+                messagebox.showerror("Lỗi", f"Không thể tạo câu hỏi mẫu: {str(e)}")
+                return
+        
+        # Get student name first
+        name_dialog = tk.Toplevel(self.parent)
+        name_dialog.title("Thông tin sinh viên")
+        name_dialog.geometry("400x200")
+        name_dialog.transient(self.parent)
+        name_dialog.grab_set()
+        
+        # Center the dialog
+        name_dialog.update_idletasks()
+        x = (name_dialog.winfo_screenwidth() // 2) - (400 // 2)
+        y = (name_dialog.winfo_screenheight() // 2) - (200 // 2)
+        name_dialog.geometry(f"400x200+{x}+{y}")
+        
+        container = ttk.Frame(name_dialog)
+        container.pack(expand=True, fill=tk.BOTH, padx=30, pady=30)
+        
+        ttk.Label(container, text="👤 Nhập tên của bạn:",
+                 font=(FONT_FAMILY, 13, 'bold'),
+                 bootstyle="primary").pack(pady=(0, 15))
+        
+        name_entry = ttk.Entry(container, font=(FONT_FAMILY, 12), width=30)
+        name_entry.pack(pady=10)
+        name_entry.focus()
+        
+        def submit_name():
+            student_name = name_entry.get().strip()
+            if not student_name:
+                messagebox.showwarning("Cảnh báo", "Vui lòng nhập tên!")
+                return
+            
+            name_dialog.destroy()
+            
+            # Create or get existing quiz (UNIQUE title constraint ensures no duplicates)
+            try:
+                quiz_id = QuizController.create_quiz_with_random_questions(
+                    "Kỹ thuật lập trình Python",
+                    "Bài thi về lập trình Python - 30 câu hỏi (10 dễ, 10 trung bình, 10 khó)",
+                    30,
+                    2700,  # 45 phút
+                    {'easy': 10, 'medium': 10, 'hard': 10}
+                )
+                
+                # Get the quiz
+                quiz = Quiz.get_by_id(quiz_id)
+                if quiz:
+                    self.initialize_quiz(quiz, student_name)
+                else:
+                    messagebox.showerror("Lỗi", "Không thể tạo bài thi!")
+            except Exception as e:
+                messagebox.showerror("Lỗi", f"Không thể tạo bài thi: {str(e)}")
+        
+        ttk.Button(container, text="🚀 Bắt đầu làm bài",
+                  command=submit_name,
+                  bootstyle="success",
+                  width=20).pack(pady=15)
+        name_entry.bind('<Return>', lambda e: submit_name())
 
     def start_quiz(self, quiz):
         """Start taking a quiz"""
@@ -151,8 +207,9 @@ class QuizView:
 
     def initialize_quiz(self, quiz, student_name):
         """Initialize quiz session"""
-        # Get quiz data with questions
-        quiz_data = QuizController.get_quiz_with_questions(quiz.id)
+        # Get quiz data with randomly selected questions
+        difficulty_matrix = {'easy': 10, 'medium': 10, 'hard': 10}
+        quiz_data = QuizController.get_quiz_with_questions(quiz.id, difficulty_matrix)
         if not quiz_data:
             messagebox.showerror("Lỗi", "Không thể tải bài thi!")
             return
@@ -312,6 +369,11 @@ class QuizView:
         if not self.timer_running:
             return
         
+        # Check if timer_label still exists
+        if not hasattr(self, 'timer_label') or not self.timer_label.winfo_exists():
+            self.timer_running = False
+            return
+        
         self.time_remaining -= 1
         
         if self.time_remaining <= 0:
@@ -322,15 +384,20 @@ class QuizView:
         
         minutes = self.time_remaining // 60
         seconds = self.time_remaining % 60
-        self.timer_label.config(text=f"⏱ {minutes:02d}:{seconds:02d}")
         
-        # Change color when time is running out
-        if self.time_remaining < 60:
-            self.timer_label.config(foreground=COLOR_DANGER)
-        elif self.time_remaining < 300:
-            self.timer_label.config(foreground='orange')
-        
-        self.parent.after(1000, self.update_timer)
+        try:
+            self.timer_label.config(text=f"⏱ {minutes:02d}:{seconds:02d}")
+            
+            # Change color when time is running out
+            if self.time_remaining < 60:
+                self.timer_label.config(foreground=COLOR_DANGER)
+            elif self.time_remaining < 300:
+                self.timer_label.config(foreground='orange')
+            
+            self.parent.after(1000, self.update_timer)
+        except tk.TclError:
+            # Widget was destroyed, stop timer
+            self.timer_running = False
 
     def submit_quiz(self):
         """Submit quiz answers"""
@@ -507,6 +574,5 @@ class QuizView:
         from utils.sample_data import create_sample_questions_and_quizzes
         
         result = create_sample_questions_and_quizzes()
-        messagebox.showinfo("Thành công", 
-                          f"Đã tạo {result['questions_count']} câu hỏi và {result['quizzes_count']} bài thi mẫu!")
+       
         self.show_quiz_list()

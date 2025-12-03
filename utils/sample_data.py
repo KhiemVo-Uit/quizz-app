@@ -6,8 +6,9 @@ from controllers.quiz_controller import QuizController
 def create_sample_questions_and_quizzes():
     """Create sample questions and quizzes"""
     
-    # Sample questions - Python Basic (Easy)
+    # 100 câu hỏi Python: 40 dễ, 30 trung bình, 30 khó
     sample_questions = [
+        # ===== 40 CÂU DỄ =====
         ("Python là ngôn ngữ lập trình gì?", 1, "Python Cơ bản", 
          [("Ngôn ngữ bậc cao", True), ("Ngôn ngữ bậc thấp", False), ("Ngôn ngữ máy", False), ("Assembly", False)]),
         ("Câu lệnh nào dùng để in ra màn hình trong Python?", 1, "Python Cơ bản",
@@ -20,60 +21,198 @@ def create_sample_questions_and_quizzes():
          [("#", True), ("//", False), ("/*", False), ("--", False)]),
         ("Để kiểm tra kiểu dữ liệu dùng hàm nào?", 1, "Python Cơ bản",
          [("type()", True), ("typeof()", False), ("check()", False), ("datatype()", False)]),
+        ("Biến trong Python có cần khai báo kiểu không?", 1, "Python Cơ bản",
+         [("Không", True), ("Có", False), ("Tùy trường hợp", False), ("Bắt buộc", False)]),
+        ("Python có phân biệt chữ hoa chữ thường không?", 1, "Python Cơ bản",
+         [("Có", True), ("Không", False), ("Tùy trường hợp", False), ("Không chắc", False)]),
+        ("Câu lệnh nào để thoát khỏi vòng lặp?", 1, "Cấu trúc điều khiển",
+         [("break", True), ("exit", False), ("stop", False), ("end", False)]),
+        ("Câu lệnh nào để bỏ qua vòng lặp hiện tại?", 1, "Cấu trúc điều khiển",
+         [("continue", True), ("skip", False), ("next", False), ("pass", False)]),
+        ("Để định nghĩa hàm trong Python dùng từ khóa?", 1, "Functions",
+         [("def", True), ("function", False), ("func", False), ("define", False)]),
+        ("Kết quả của 3 + 2 * 2 là?", 1, "Toán tử",
+         [("7", True), ("10", False), ("8", False), ("12", False)]),
+        ("Toán tử ** trong Python dùng để?", 1, "Toán tử",
+         [("Lũy thừa", True), ("Nhân", False), ("Chia", False), ("Mod", False)]),
+        ("Toán tử // trong Python dùng để?", 1, "Toán tử",
+         [("Chia lấy phần nguyên", True), ("Chia lấy dư", False), ("Chia thông thường", False), ("Comment", False)]),
+        ("Toán tử % trong Python dùng để?", 1, "Toán tử",
+         [("Chia lấy dư", True), ("Phần trăm", False), ("Chia", False), ("Mod string", False)]),
+        ("Cách nào để tạo string trong Python?", 1, "String",
+         [("Cả 'text' và \"text\"", True), ("Chỉ 'text'", False), ("Chỉ \"text\"", False), ("Không có cách nào", False)]),
+        ("Hàm nào để chuyển số thành string?", 1, "Type Conversion",
+         [("str()", True), ("int()", False), ("float()", False), ("string()", False)]),
+        ("Hàm nào để chuyển string thành số nguyên?", 1, "Type Conversion",
+         [("int()", True), ("str()", False), ("float()", False), ("number()", False)]),
+        ("True và False trong Python viết như thế nào?", 1, "Boolean",
+         [("Viết hoa chữ cái đầu", True), ("Viết thường", False), ("Viết hoa tất cả", False), ("Viết thường tất cả", False)]),
+        ("Giá trị Boolean nào đại diện cho đúng?", 1, "Boolean",
+         [("True", True), ("true", False), ("TRUE", False), ("1", False)]),
+        ("Câu lệnh if trong Python kết thúc bằng?", 1, "Cấu trúc điều khiển",
+         [(":", True), (";", False), ("{", False), ("then", False)]),
+        ("Indentation trong Python có quan trọng không?", 1, "Python Cơ bản",
+         [("Rất quan trọng", True), ("Không quan trọng", False), ("Tùy chọn", False), ("Không cần thiết", False)]),
+        ("Vòng lặp nào dùng để duyệt qua các phần tử?", 1, "Vòng lặp",
+         [("for", True), ("while", False), ("do-while", False), ("loop", False)]),
+        ("Vòng lặp nào lặp khi điều kiện đúng?", 1, "Vòng lặp",
+         [("while", True), ("for", False), ("loop", False), ("until", False)]),
+        ("Hàm range(5) trả về giá trị nào?", 1, "Functions",
+         [("0,1,2,3,4", True), ("1,2,3,4,5", False), ("0,1,2,3,4,5", False), ("1,2,3,4", False)]),
+        ("List trong Python được khai báo bằng?", 1, "List",
+         [("[]", True), ("()", False), ("{}", False), ("<>", False)]),
+        ("Cách nào để truy cập phần tử đầu tiên của list?", 1, "List",
+         [("list[0]", True), ("list[1]", False), ("list.first()", False), ("list.get(0)", False)]),
+        ("Cách nào để lấy phần tử cuối của list?", 1, "List",
+         [("list[-1]", True), ("list[last]", False), ("list.last()", False), ("list[end]", False)]),
+        ("Hàm nào để sắp xếp list?", 1, "List",
+         [("sort()", True), ("order()", False), ("arrange()", False), ("sorted()", False)]),
+        ("None trong Python đại diện cho?", 1, "Kiểu dữ liệu",
+         [("Không có giá trị", True), ("Số 0", False), ("String rỗng", False), ("False", False)]),
+        ("Cách nào để tạo comment nhiều dòng?", 1, "Python Cơ bản",
+         [('"""comment"""', True), ("# mỗi dòng", False), ("/* comment */", False), ("<!-- comment -->", False)]),
+        ("Từ khóa nào để import module?", 1, "Modules",
+         [("import", True), ("include", False), ("require", False), ("use", False)]),
+        ("Cách nào để import tất cả từ module?", 1, "Modules",
+         [("from module import *", True), ("import module.*", False), ("include module", False), ("use module", False)]),
+        ("Hàm abs() dùng để làm gì?", 1, "Built-in Functions",
+         [("Lấy giá trị tuyệt đối", True), ("Lấy giá trị gần đúng", False), ("Làm tròn", False), ("Lấy phần nguyên", False)]),
+        ("Hàm max() trả về gì?", 1, "Built-in Functions",
+         [("Giá trị lớn nhất", True), ("Giá trị nhỏ nhất", False), ("Tổng các giá trị", False), ("Trung bình", False)]),
+        ("Hàm min() trả về gì?", 1, "Built-in Functions",
+         [("Giá trị nhỏ nhất", True), ("Giá trị lớn nhất", False), ("Tổng các giá trị", False), ("Trung bình", False)]),
+        ("Hàm sum() dùng để làm gì?", 1, "Built-in Functions",
+         [("Tính tổng", True), ("Tính trung bình", False), ("Đếm số lượng", False), ("Tính tích", False)]),
+        ("Hàm len() trả về gì?", 1, "Built-in Functions",
+         [("Độ dài", True), ("Kích thước", False), ("Số lượng byte", False), ("Giá trị", False)]),
+        ("Hàm round() dùng để làm gì?", 1, "Built-in Functions",
+         [("Làm tròn số", True), ("Lấy giá trị tuyệt đối", False), ("Cắt số", False), ("Định dạng số", False)]),
+        ("Python được phát triển bởi ai?", 1, "Python Cơ bản",
+         [("Guido van Rossum", True), ("James Gosling", False), ("Dennis Ritchie", False), ("Bjarne Stroustrup", False)]),
         
-        # Python Medium
+        # ===== 30 CÂU TRUNG BÌNH =====
         ("Kiểu dữ liệu nào lưu số thực trong Python?", 2, "Kiểu dữ liệu",
          [("float", True), ("int", False), ("string", False), ("boolean", False)]),
         ("List trong Python có thể thay đổi không?", 2, "Kiểu dữ liệu",
-         [("Có", True), ("Không", False), ("Tùy trường hợp", False), ("Không biết", False)]),
+         [("Có (Mutable)", True), ("Không (Immutable)", False), ("Tùy trường hợp", False), ("Không biết", False)]),
         ("Tuple trong Python được khai báo bằng?", 2, "Kiểu dữ liệu",
          [("()", True), ("[]", False), ("{}", False), ("<>", False)]),
         ("Dictionary trong Python lưu trữ dữ liệu dạng?", 2, "Kiểu dữ liệu",
          [("key-value", True), ("array", False), ("list", False), ("queue", False)]),
-        ("Phương thức nào để thêm phần tử vào cuối list?", 2, "List & Tuple",
+        ("Phương thức nào để thêm phần tử vào cuối list?", 2, "List",
          [("append()", True), ("add()", False), ("insert()", False), ("push()", False)]),
-        ("Để lấy độ dài của một list, dùng hàm nào?", 2, "List & Tuple",
-         [("len()", True), ("length()", False), ("size()", False), ("count()", False)]),
         ("Set trong Python có cho phép phần tử trùng lặp không?", 2, "Kiểu dữ liệu",
          [("Không", True), ("Có", False), ("Tùy trường hợp", False), ("Không xác định", False)]),
         ("Cách nào để tạo string nhiều dòng?", 2, "String",
          [('"""text"""', True), ("'text'", False), ('"text"', False), ("(text)", False)]),
+        ("Stack hoạt động theo nguyên tắc nào?", 2, "Data Structures",
+         [("LIFO (Last In First Out)", True), ("FIFO", False), ("LILO", False), ("Random", False)]),
+        ("Queue hoạt động theo nguyên tắc nào?", 2, "Data Structures",
+         [("FIFO (First In First Out)", True), ("LIFO", False), ("LILO", False), ("Random", False)]),
+        ("Tính kế thừa trong OOP tiếng Anh là?", 2, "OOP",
+         [("Inheritance", True), ("Polymorphism", False), ("Encapsulation", False), ("Abstraction", False)]),
+        ("Từ khóa nào để kế thừa class trong Python?", 2, "OOP",
+         [("class Child(Parent):", True), ("class Child extends Parent:", False), ("class Child inherits Parent:", False), ("class Child <- Parent:", False)]),
+        ("Mode nào để mở file để đọc?", 2, "File Handling",
+         [("'r'", True), ("'w'", False), ("'a'", False), ("'x'", False)]),
+        ("Mode nào để mở file để ghi (xóa nội dung cũ)?", 2, "File Handling",
+         [("'w'", True), ("'r'", False), ("'a'", False), ("'r+'", False)]),
+        ("Phương thức nào để xóa phần tử khỏi list?", 2, "List",
+         [("remove()", True), ("delete()", False), ("pop() hoặc remove()", False), ("clear()", False)]),
+        ("Phương thức nào để chèn phần tử vào list?", 2, "List",
+         [("insert()", True), ("add()", False), ("append()", False), ("push()", False)]),
+        ("Slicing list[1:3] trả về gì?", 2, "List",
+         [("Phần tử index 1 và 2", True), ("Phần tử index 1,2,3", False), ("Phần tử index 0,1,2", False), ("Lỗi", False)]),
+        ("List comprehension dùng để làm gì?", 2, "Advanced",
+         [("Tạo list ngắn gọn", True), ("Duyệt list", False), ("Xóa list", False), ("Sắp xếp list", False)]),
+        ("Phương thức split() dùng để làm gì?", 2, "String",
+         [("Tách string thành list", True), ("Nối string", False), ("Cắt string", False), ("Thay thế string", False)]),
+        ("Phương thức join() dùng để làm gì?", 2, "String",
+         [("Nối list thành string", True), ("Tách string", False), ("Cắt string", False), ("Thay thế", False)]),
+        ("Phương thức replace() dùng để làm gì?", 2, "String",
+         [("Thay thế chuỗi con", True), ("Xóa chuỗi", False), ("Tìm chuỗi", False), ("Nối chuỗi", False)]),
+        ("Phương thức upper() làm gì với string?", 2, "String",
+         [("Chuyển thành chữ hoa", True), ("Chuyển thành chữ thường", False), ("Viết hoa chữ đầu", False), ("Đảo ngược", False)]),
+        ("Phương thức lower() làm gì với string?", 2, "String",
+         [("Chuyển thành chữ thường", True), ("Chuyển thành chữ hoa", False), ("Viết hoa chữ đầu", False), ("Đảo ngược", False)]),
+        ("Phương thức strip() dùng để làm gì?", 2, "String",
+         [("Xóa khoảng trắng đầu cuối", True), ("Xóa toàn bộ khoảng trắng", False), ("Thêm khoảng trắng", False), ("Thay thế khoảng trắng", False)]),
+        ("Từ khóa 'global' dùng để làm gì?", 2, "Functions",
+         [("Khai báo biến toàn cục", True), ("Khai báo biến cục bộ", False), ("Khai báo hằng số", False), ("Import module", False)]),
+        ("Từ khóa 'return' trong hàm dùng để?", 2, "Functions",
+         [("Trả về giá trị", True), ("Kết thúc hàm", False), ("In ra màn hình", False), ("Lưu giá trị", False)]),
+        ("Default parameter trong Python là gì?", 2, "Functions",
+         [("Tham số có giá trị mặc định", True), ("Tham số bắt buộc", False), ("Tham số đầu tiên", False), ("Tham số cuối", False)]),
+        ("Tuple có thể thay đổi giá trị không?", 2, "Tuple",
+         [("Không (Immutable)", True), ("Có (Mutable)", False), ("Tùy trường hợp", False), ("Không biết", False)]),
+        ("Set được khai báo bằng?", 2, "Set",
+         [("{} hoặc set()", True), ("[]", False), ("()", False), ("<>", False)]),
+        ("Dictionary lấy giá trị bằng cách nào?", 2, "Dictionary",
+         [("dict[key]", True), ("dict.get(index)", False), ("dict[index]", False), ("dict.value(key)", False)]),
+        ("Cách nào để thêm cặp key-value vào dict?", 2, "Dictionary",
+         [("dict[key] = value", True), ("dict.add(key, value)", False), ("dict.insert(key, value)", False), ("dict.append(key, value)", False)]),
         
-        # Python Hard
+        # ===== 30 CÂU KHÓ =====
         ("Decorator trong Python được ký hiệu bằng?", 3, "Advanced",
          [("@", True), ("#", False), ("&", False), ("$", False)]),
         ("Lambda function trong Python là gì?", 3, "Functions",
-         [("Hàm vô danh", True), ("Hàm thông thường", False), ("Hàm tĩnh", False), ("Hàm đệ quy", False)]),
+         [("Hàm vô danh (anonymous function)", True), ("Hàm thông thường", False), ("Hàm tĩnh", False), ("Hàm đệ quy", False)]),
         ("Generator trong Python sử dụng từ khóa nào?", 3, "Advanced",
          [("yield", True), ("return", False), ("generate", False), ("next", False)]),
         ("*args trong Python dùng để làm gì?", 3, "Functions",
          [("Nhận số lượng tham số không xác định", True), ("Nhận mảng", False), ("Nhận dictionary", False), ("Nhận tuple", False)]),
         ("__init__ trong Python là gì?", 3, "OOP",
-         [("Constructor", True), ("Destructor", False), ("Method thường", False), ("Static method", False)]),
+         [("Constructor (hàm khởi tạo)", True), ("Destructor", False), ("Method thường", False), ("Static method", False)]),
         ("List comprehension nào sau đây đúng?", 3, "Advanced",
          [("[x*2 for x in range(5)]", True), ("{x*2 for x in range(5)}", False), ("(x*2 in range(5))", False), ("[x*2 in range(5)]", False)]),
         ("Để bắt ngoại lệ trong Python dùng từ khóa?", 3, "Exception",
          [("try-except", True), ("try-catch", False), ("catch-throw", False), ("handle-error", False)]),
         ("Module nào để làm việc với JSON?", 3, "Modules",
          [("json", True), ("jsonlib", False), ("jsonparser", False), ("simplejson", False)]),
-        
-        # Data Structures
-        ("Stack hoạt động theo nguyên tắc nào?", 2, "Data Structures",
-         [("LIFO", True), ("FIFO", False), ("LILO", False), ("FILO", False)]),
-        ("Queue hoạt động theo nguyên tắc nào?", 2, "Data Structures",
-         [("FIFO", True), ("LIFO", False), ("LILO", False), ("Random", False)]),
-        
-        # OOP
-        ("Tính kế thừa trong OOP tiếng Anh là?", 2, "OOP",
-         [("Inheritance", True), ("Polymorphism", False), ("Encapsulation", False), ("Abstraction", False)]),
-        ("Từ khóa nào để kế thừa class trong Python?", 2, "OOP",
-         [("class Child(Parent):", True), ("class Child extends Parent:", False), ("class Child inherits Parent:", False), ("class Child <- Parent:", False)]),
-        
-        # File Handling
-        ("Mode nào để mở file để đọc?", 2, "File Handling",
-         [("'r'", True), ("'w'", False), ("'a'", False), ("'x'", False)]),
-        ("Mode nào để mở file để ghi (xóa nội dung cũ)?", 2, "File Handling",
-         [("'w'", True), ("'r'", False), ("'a'", False), ("'r+'", False)]),
+        ("**kwargs trong Python dùng để làm gì?", 3, "Functions",
+         [("Nhận keyword arguments không xác định", True), ("Nhận list", False), ("Nhận tuple", False), ("Nhận set", False)]),
+        ("Closure trong Python là gì?", 3, "Advanced",
+         [("Hàm lồng nhau giữ biến outer", True), ("Hàm đệ quy", False), ("Hàm lambda", False), ("Decorator", False)]),
+        ("Property decorator (@property) dùng để?", 3, "OOP",
+         [("Tạo getter/setter cho thuộc tính", True), ("Tạo static method", False), ("Tạo class method", False), ("Kế thừa class", False)]),
+        ("@staticmethod khác @classmethod như thế nào?", 3, "OOP",
+         [("staticmethod không nhận self/cls", True), ("classmethod không nhận tham số", False), ("Giống nhau", False), ("staticmethod nhanh hơn", False)]),
+        ("Multiple inheritance trong Python là gì?", 3, "OOP",
+         [("Kế thừa từ nhiều class", True), ("Kế thừa một class", False), ("Không kế thừa", False), ("Kế thừa interface", False)]),
+        ("MRO (Method Resolution Order) là gì?", 3, "OOP",
+         [("Thứ tự tìm kiếm method khi đa kế thừa", True), ("Thứ tự khai báo method", False), ("Thứ tự gọi method", False), ("Thứ tự import", False)]),
+        ("Context manager (with statement) dùng để?", 3, "Advanced",
+         [("Quản lý tài nguyên tự động", True), ("Tạo context", False), ("Quản lý biến", False), ("Tạo scope", False)]),
+        ("__str__ và __repr__ khác nhau thế nào?", 3, "OOP",
+         [("__str__ cho user, __repr__ cho dev", True), ("Giống nhau", False), ("__str__ nhanh hơn", False), ("__repr__ dễ dùng hơn", False)]),
+        ("GIL trong Python là gì?", 3, "Advanced",
+         [("Global Interpreter Lock", True), ("General Import Library", False), ("Global Index List", False), ("Generic Interface Layer", False)]),
+        ("Shallow copy khác deep copy như thế nào?", 3, "Advanced",
+         [("Shallow copy không sao chép nested objects", True), ("Deep copy nhanh hơn", False), ("Giống nhau", False), ("Shallow copy an toàn hơn", False)]),
+        ("Iterator protocol yêu cầu implement method nào?", 3, "Advanced",
+         [("__iter__ và __next__", True), ("__init__ và __call__", False), ("__get__ và __set__", False), ("__enter__ và __exit__", False)]),
+        ("Metaclass trong Python là gì?", 3, "Advanced",
+         [("Class của class", True), ("Subclass", False), ("Abstract class", False), ("Interface", False)]),
+        ("Monkey patching là gì?", 3, "Advanced",
+         [("Thay đổi code runtime", True), ("Debug code", False), ("Test code", False), ("Optimize code", False)]),
+        ("Duck typing trong Python có nghĩa là gì?", 3, "Advanced",
+         [("Kiểm tra hành vi thay vì kiểu", True), ("Kiểm tra kiểu nghiêm ngặt", False), ("Kiểm tra tên biến", False), ("Không kiểm tra gì", False)]),
+        ("asyncio trong Python dùng để làm gì?", 3, "Modules",
+         [("Lập trình bất đồng bộ", True), ("Đa luồng", False), ("Đa tiến trình", False), ("Tối ưu code", False)]),
+        ("Từ khóa 'async' và 'await' dùng cho?", 3, "Advanced",
+         [("Coroutines (lập trình bất đồng bộ)", True), ("Threading", False), ("Multiprocessing", False), ("Event handling", False)]),
+        ("Descriptor protocol bao gồm methods nào?", 3, "Advanced",
+         [("__get__, __set__, __delete__", True), ("__init__, __new__, __call__", False), ("__enter__, __exit__", False), ("__iter__, __next__", False)]),
+        ("weakref module dùng để làm gì?", 3, "Modules",
+         [("Tạo weak reference (tránh circular ref)", True), ("Tạo strong reference", False), ("Quản lý memory", False), ("Optimize performance", False)]),
+        ("Sự khác biệt giữa is và == là gì?", 3, "Operators",
+         [("is so sánh identity, == so sánh value", True), ("Giống nhau", False), ("is nhanh hơn", False), ("== chính xác hơn", False)]),
+        ("Tại sao list comprehension nhanh hơn loop?", 3, "Performance",
+         [("Được tối ưu ở C level", True), ("Dùng ít memory hơn", False), ("Dễ đọc hơn", False), ("Không nhanh hơn", False)]),
+        ("slots trong Python class dùng để?", 3, "OOP",
+         [("Tiết kiệm memory bằng cố định attributes", True), ("Tăng tốc độ", False), ("Bảo mật", False), ("Kế thừa", False)]),
+        ("Collections.namedtuple khác tuple thường như thế nào?", 3, "Data Structures",
+         [("Có thể truy cập bằng tên field", True), ("Mutable", False), ("Nhanh hơn", False), ("Tiết kiệm memory hơn", False)]),
     ]
     
     # Add questions to database
@@ -84,52 +223,10 @@ def create_sample_questions_and_quizzes():
             # Skip if question already exists
             pass
     
-    # Create multiple quizzes
-    try:
-        QuizController.create_quiz_with_random_questions(
-            "Bài thi Python cơ bản",
-            "Kiểm tra kiến thức Python cơ bản",
-            10,
-            600,
-            {'easy': 6, 'medium': 3, 'hard': 1}
-        )
-    except Exception:
-        pass
-    
-    try:
-        QuizController.create_quiz_with_random_questions(
-            "Bài thi Python nâng cao",
-            "Kiểm tra kiến thức Python nâng cao",
-            15,
-            900,
-            {'easy': 3, 'medium': 7, 'hard': 5}
-        )
-    except Exception:
-        pass
-    
-    try:
-        QuizController.create_quiz_with_random_questions(
-            "Bài thi Python toàn diện",
-            "Kiểm tra toàn diện kiến thức Python",
-            20,
-            1200,
-            {'easy': 6, 'medium': 8, 'hard': 6}
-        )
-    except Exception:
-        pass
-    
-    try:
-        QuizController.create_quiz_with_random_questions(
-            "Bài thi nhanh - 5 phút",
-            "Bài thi ngắn 5 câu",
-            5,
-            300,
-            {'easy': 2, 'medium': 2, 'hard': 1}
-        )
-    except Exception:
-        pass
+    # Không tạo quiz trước - quiz sẽ được tạo động mỗi khi bắt đầu làm bài
+    # Điều này đảm bảo mỗi lần thi sẽ có bộ câu hỏi ngẫu nhiên khác nhau
     
     return {
         'questions_count': len(sample_questions),
-        'quizzes_count': 4
+        'quizzes_count': 0  # Quiz được tạo động khi làm bài
     }

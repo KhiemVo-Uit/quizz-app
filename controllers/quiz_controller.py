@@ -13,46 +13,53 @@ class QuizController:
     @staticmethod
     def create_quiz_with_random_questions(title, description, total_questions, time_limit, difficulty_matrix=None):
         """
-        Create a quiz with randomly selected questions
+        Create a quiz metadata (questions will be selected randomly when starting attempt)
+        If quiz with same title exists, returns existing quiz_id
         
         difficulty_matrix: dict like {'easy': 5, 'medium': 3, 'hard': 2}
+        Store in description for reference
         """
-        # Create quiz
-        quiz_id = Quiz.create(title, description, time_limit, total_questions)
-
-        # Get random questions based on difficulty matrix
-        selected_questions = []
+        # Check if quiz already exists by title
+        existing_quiz = Quiz.get_by_title(title)
+        if existing_quiz:
+            return existing_quiz.id
         
+        # Store difficulty matrix in description if provided
         if difficulty_matrix:
-            for difficulty_name, count in difficulty_matrix.items():
-                if count > 0:
-                    difficulty_level = {'easy': 1, 'medium': 2, 'hard': 3}.get(difficulty_name, 1)
-                    questions = Question.get_random_questions(count, difficulty_level)
-                    selected_questions.extend(questions)
-        else:
-            # Random selection without difficulty filter
-            selected_questions = Question.get_random_questions(total_questions)
-
-        # Add questions to quiz
-        for order, question in enumerate(selected_questions, 1):
-            Quiz.add_question(quiz_id, question.id, order)
-
+            desc_parts = [description] if description else []
+            matrix_str = ', '.join([f"{count} câu {name}" for name, count in difficulty_matrix.items()])
+            desc_parts.append(f"({matrix_str})")
+            description = ' '.join(desc_parts)
+        
+        # Create quiz metadata only (will also handle duplicate via UNIQUE constraint)
+        quiz_id = Quiz.create(title, description, time_limit, total_questions)
         return quiz_id
 
     @staticmethod
-    def get_quiz_with_questions(quiz_id):
-        """Get quiz with all its questions and options"""
+    def get_quiz_with_questions(quiz_id, difficulty_matrix={'easy': 10, 'medium': 10, 'hard': 10}):
+        """Get quiz with randomly selected questions each time"""
         quiz = Quiz.get_by_id(quiz_id)
         if not quiz:
             return None
 
-        questions = Quiz.get_questions(quiz_id)
+        # Select random questions based on difficulty_matrix
+        selected_questions = []
+        
+        for difficulty_name, count in difficulty_matrix.items():
+            if count > 0:
+                difficulty_level = {'easy': 1, 'medium': 2, 'hard': 3}.get(difficulty_name, 1)
+                questions = Question.get_random_questions(count, difficulty_level)
+                selected_questions.extend(questions)
+        
+        # Shuffle questions to randomize order
+        random.shuffle(selected_questions)
+        
         quiz_data = {
             'quiz': quiz,
             'questions': []
         }
 
-        for question in questions:
+        for question in selected_questions:
             options = Option.get_by_question(question.id)
             # Shuffle options for randomization
             random.shuffle(options)
@@ -208,17 +215,18 @@ class QuizController:
         """Get comprehensive statistics for a quiz"""
         stats = Attempt.get_statistics(quiz_id)
         
-        # Get question difficulty breakdown
+        # Get question difficulty breakdown from actual attempts
         conn = Attempt.get_by_id.__globals__['db'].get_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
             SELECT 
                 q.difficulty,
-                COUNT(*) as count
-            FROM quiz_questions qq
-            INNER JOIN questions q ON qq.question_id = q.id
-            WHERE qq.quiz_id = ?
+                COUNT(DISTINCT aa.question_id) as count
+            FROM attempt_answers aa
+            INNER JOIN questions q ON aa.question_id = q.id
+            INNER JOIN attempts a ON aa.attempt_id = a.id
+            WHERE a.quiz_id = ?
             GROUP BY q.difficulty
         ''', (quiz_id,))
         
