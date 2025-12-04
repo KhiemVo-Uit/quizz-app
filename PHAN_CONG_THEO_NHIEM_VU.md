@@ -109,7 +109,6 @@ utils/
    - `get_attempt_review()` review chi tiết
    - `get_question_statistics()` thống kê câu hỏi
    - `analyze_difficulty()` phân tích độ khó thực tế
-   - `get_quiz_statistics()` thống kê tổng quan
 
 2. **Question Bank Controller**
 
