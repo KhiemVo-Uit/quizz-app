@@ -22,6 +22,8 @@ class QuizApp:
         db.initialize_database()
         
         # Create main container
+        # Auto-create sample questions if database is empty
+        self.check_and_create_sample_data()
         self.main_container = ttk.Frame(root)
         self.main_container.pack(fill=tk.BOTH, expand=True)
         
@@ -36,6 +38,38 @@ class QuizApp:
     def setup_style(self):
         """Configure application styles - not needed with ttkbootstrap"""
         pass
+
+    def check_and_create_sample_data(self):
+        """Check if database has data, create sample questions if empty"""
+        try:
+            from models.question import Question
+        except Exception:
+            return
+
+        # Check if questions exist
+        try:
+            question_count = Question.count()
+        except Exception:
+            question_count = 0
+
+        if question_count == 0:
+            print("📝 Database is empty. Creating sample questions...")
+            try:
+                from utils.sample_data import create_sample_questions_and_quizzes
+                result = create_sample_questions_and_quizzes()
+                created_q = result.get('questions_count') if isinstance(result, dict) else None
+                print(f"✅ Created {created_q or 'N/A'} sample questions")
+            except Exception as e:
+                print(f"⚠️ Error creating sample data: {e}")
+                try:
+                    messagebox.showwarning(
+                        "Cảnh báo",
+                        f"Không thể tạo dữ liệu mẫu: {e}\nBạn có thể thêm câu hỏi thủ công trong Ngân hàng câu hỏi."
+                    )
+                except Exception:
+                    pass
+        else:
+            print(f"✅ Database has {question_count} questions")
 
     def create_sidebar(self):
         """Create navigation sidebar"""
