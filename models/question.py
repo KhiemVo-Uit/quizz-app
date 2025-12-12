@@ -171,8 +171,7 @@ class Question:
             category=row['category'],
             created_at=row['created_at']
         ) for row in rows]
-#cường
- @staticmethod
+    @staticmethod
     def get_statistics(question_id):
         """Get statistics for a specific question (moved from Controller)"""
         conn = db.get_connection()

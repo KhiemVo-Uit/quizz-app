@@ -15,11 +15,11 @@
 
 | STT   | Thành viên       | Nhiệm vụ chính                      | Layer          | Độ khó     |
 | ----- | ---------------- | ----------------------------------- | -------------- | ---------- |
-| **1** | **Thành viên A** | **DATABASE + ALL MODELS**           | Data Layer     | ⭐⭐⭐⭐⭐ |
-| **2** | **Thành viên B** | **ALL CONTROLLERS**                 | Business Logic | ⭐⭐⭐⭐⭐ |
-| **3** | **Thành viên C** | **QUIZ VIEW**                       | Presentation   | ⭐⭐⭐⭐   |
-| **4** | **Thành viên D** | **QUESTION BANK VIEW**              | Presentation   | ⭐⭐⭐⭐   |
-| **5** | **Thành viên E** | **MAIN APP + STATISTICS + TESTING** | Integration    | ⭐⭐⭐⭐⭐ |
+| **1** | **CƯỜNG** | **DATABASE + ALL MODELS** + BÁO CÁO          | Data Layer     | ⭐⭐⭐⭐⭐ |
+| **2** | **KHIÊM** | **ALL CONTROLLERS**   + CHIA VIỆC              | Business Logic | ⭐⭐⭐⭐⭐ |
+| **3** | **NHUNG** | **QUIZ VIEW** + SLIDE                      | Presentation   | ⭐⭐⭐⭐   |
+| **4** | **LỢI** | **QUESTION BANK VIEW** + STATISTICS             | Presentation   | 
+| **5** | **ENGLISH** |  **MAIN APP  + TESTING** + THUYẾT TRÌNH | Integration    | ⭐⭐⭐⭐⭐ |
 
 ---
 
