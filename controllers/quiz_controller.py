@@ -142,71 +142,14 @@ class QuizController:
             })
 
         return review_data
-
-    @staticmethod
+#Cường
+@staticmethod
     def get_question_statistics(question_id):
         """Get statistics for a specific question"""
-        conn = Attempt.get_by_id.__globals__['db'].get_connection()
-        cursor = conn.cursor()
-
-        # Total times answered
-        cursor.execute('''
-            SELECT COUNT(*) as total_answers
-            FROM attempt_answers
-            WHERE question_id = ?
-        ''', (question_id,))
-        total_answers = cursor.fetchone()['total_answers']
-
-        # Correct answer rate
-        cursor.execute('''
-            SELECT COUNT(*) as correct_count
-            FROM attempt_answers
-            WHERE question_id = ? AND is_correct = 1
-        ''', (question_id,))
-        correct_count = cursor.fetchone()['correct_count']
-
-        # Option selection distribution
-        cursor.execute('''
-            SELECT 
-                o.id,
-                o.option_text,
-                o.is_correct,
-                COUNT(aa.id) as selection_count
-            FROM options o
-            LEFT JOIN attempt_answers aa ON o.id = aa.selected_option_id
-            WHERE o.question_id = ?
-            GROUP BY o.id
-        ''', (question_id,))
-        option_stats = cursor.fetchall()
-
-        return {
-            'total_answers': total_answers,
-            'correct_count': correct_count,
-            'correct_rate': (correct_count / total_answers * 100) if total_answers > 0 else 0,
-            'option_distribution': option_stats
-        }
+        return Question.get_statistics(question_id)
 
     @staticmethod
     def analyze_difficulty():
         """Analyze actual difficulty based on answer statistics"""
-        conn = Attempt.get_by_id.__globals__['db'].get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            SELECT 
-                q.id,
-                q.question_text,
-                q.difficulty as labeled_difficulty,
-                COUNT(aa.id) as total_answers,
-                SUM(CASE WHEN aa.is_correct = 1 THEN 1 ELSE 0 END) as correct_answers,
-                CAST(SUM(CASE WHEN aa.is_correct = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
-                    COUNT(aa.id) * 100 as success_rate
-            FROM questions q
-            LEFT JOIN attempt_answers aa ON q.id = aa.question_id
-            GROUP BY q.id
-            HAVING COUNT(aa.id) > 0
-            ORDER BY success_rate ASC
-        ''')
-
-        return cursor.fetchall()
+        return Question.analyze_difficulty()
 
