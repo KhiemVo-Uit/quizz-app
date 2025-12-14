@@ -399,20 +399,28 @@ CREATE INDEX idx_questions_text ON questions(question_text);
 
 ### 5.4. Views Layer
 
-#### 5.4.0. `main.py` (Application Entry & Dashboard)
+#### 5.4.0. `main.py` (Application Entry & Navigation)
 
-**Giao diện Dashboard:**
+**Class QuizApp** - điều phối toàn bộ ứng dụng:
 
-- Thiết kế hiện đại với **ttkbootstrap** (theme 'cosmo')
-- **Hero Section:** Tiêu đề lớn, chào mừng người dùng
-- **Feature Cards:** Grid layout hiển thị các chức năng chính (Thi ngay, Ngân hàng câu hỏi, Thống kê) với icons
-- **Fullscreen Mode:** Tự động mở toàn màn hình (cấu hình trong `config.py`)
+| Phương thức | Chức năng |
+|-------------|-----------|
+| `__init__()` | Khởi tạo DB, tạo sidebar, hiển thị home |
+| `create_sidebar()` | Tạo 5 buttons navigation (Home, Quiz, Question Bank, Statistics, Exit) |
+| `clear_content()` | Xóa view hiện tại trước khi chuyển view mới |
+| `show_home/quiz/question_bank/statistics()` | Chuyển đổi giữa các views |
+| `check_and_create_sample_data()` | Tự động tạo 100 câu hỏi mẫu nếu DB trống |
+| `quit_app()` | Hiển thị dialog xác nhận trước khi thoát |
 
-**Startup Logic:**
+**Luồng khởi động:**
 
-- **`check_and_create_sample_data()`:** Tự động kiểm tra và tạo dữ liệu mẫu nếu database trống
-- Khởi tạo database connection và các controllers
-- Điều hướng linh hoạt giữa các views (Home, Quiz, Question Bank, Statistics)
+1. Tạo cửa sổ ttkbootstrap (theme 'cosmo')
+2. Khởi tạo database (`db.initialize_database()`)
+3. Tạo sample data nếu DB trống
+4. Render sidebar + content area
+5. Hiển thị Home screen mặc định
+
+**Navigation:** Sử dụng pattern Single Content Frame - mỗi lần chuyển view sẽ xóa view cũ và tạo view mới, tiết kiệm memory và đảm bảo trạng thái sạch.
 
 #### 5.4.1. `views/quiz_view.py`
 
@@ -802,11 +810,53 @@ difficulty_matrix = {
 
 ## 8. KIỂM THỬ
 
-### 8.1. Test framework
+### 8.1. Test Framework & Kiến trúc
 
-- **pytest** với coverage plugin
-- **18 unit tests** (vượt yêu cầu ≥12)
-- File: `tests/test_quiz_app.py`
+**Framework:** pytest với coverage plugin
+
+**File:** `tests/test_quiz_app.py` - chứa 18 unit tests (vượt yêu cầu ≥12)
+
+**Cấu trúc test file:**
+
+```python
+# Import các modules cần test
+from database.connection import db
+from models.question import Question
+from models.option import Option
+from models.quiz import Quiz
+from models.attempt import Attempt
+from controllers.quiz_controller import QuizController
+from controllers.question_bank_controller import QuestionBankController
+
+# Fixture dùng chung cho tất cả tests
+@pytest.fixture(scope='function')
+def setup_database():
+    """Reset database trước và sau mỗi test"""
+    db.reset_database()
+    yield
+    db.reset_database()
+
+# 4 Test Classes tổ chức theo module
+class TestQuestionModel:     # 6 tests
+class TestOptionModel:       # 3 tests  
+class TestQuizController:    # 6 tests
+class TestQuestionBankController:  # 3 tests
+```
+
+**Fixture `setup_database`:**
+
+- **Scope:** `function` - chạy trước/sau MỖI test
+- **Chức năng:** Reset database về trạng thái sạch
+- **Đảm bảo:** Mỗi test độc lập, không ảnh hưởng lẫn nhau
+
+**Tổ chức Test Classes:**
+
+| Class | Module được test | Số tests |
+|-------|------------------|----------|
+| `TestQuestionModel` | `models/question.py` | 6 |
+| `TestOptionModel` | `models/option.py` | 3 |
+| `TestQuizController` | `controllers/quiz_controller.py` | 6 |
+| `TestQuestionBankController` | `controllers/question_bank_controller.py` | 3 |
 
 ### 8.2. Danh sách tests
 
@@ -874,6 +924,132 @@ pytest tests/test_quiz_app.py::test_random_question_selection -v
 - Tạo câu với 0 đáp án đúng → ValueError
 - Tạo câu với 2 đáp án đúng → ValueError
 - Tạo câu với 1 option → ValueError
+
+### 8.6. Chi tiết một số tests quan trọng
+
+**Test CRUD Question:**
+
+```python
+def test_create_question(self, setup_database):
+    """Test tạo câu hỏi mới"""
+    question_id = Question.create("What is Python?", 1, "Python")
+    assert question_id is not None
+    assert question_id > 0
+
+def test_delete_question(self, setup_database):
+    """Test xóa câu hỏi"""
+    question_id = Question.create("To be deleted", 1, "Test")
+    assert Question.delete(question_id) == True
+    assert Question.get_by_id(question_id) is None  # Đã xóa
+```
+
+**Test Random Selection:**
+
+```python
+def test_random_question_selection(self, setup_database):
+    """Test randomization của câu hỏi"""
+    # Tạo 10 câu hỏi
+    for i in range(10):
+        Question.create(f"Question {i}", 1, "Test")
+    
+    # Lấy random 5 câu
+    random_questions = Question.get_random_questions(5)
+    assert len(random_questions) == 5
+    
+    # Kiểm tra tính ngẫu nhiên (chạy nhiều lần)
+    selections = []
+    for _ in range(3):
+        questions = Question.get_random_questions(3)
+        question_ids = [q.id for q in questions]
+        selections.append(tuple(question_ids))
+    
+    assert len(set(selections)) >= 1  # Có kết quả
+```
+
+**Test Scoring Calculation:**
+
+```python
+def test_scoring_calculation(self, setup_database):
+    """Test tính điểm"""
+    # Setup: Tạo quiz với 3 câu hỏi
+    questions = []
+    for i in range(3):
+        q_id = Question.create(f"Q{i}", 1, "Test")
+        Option.create(q_id, "Correct", True)
+        Option.create(q_id, "Wrong", False)
+        questions.append(q_id)
+    
+    quiz_id = Quiz.create("Test", "Desc", 300, 3)
+    attempt_id = QuizController.start_attempt(quiz_id, "Student")
+    
+    # Trả lời 2 đúng, 1 sai
+    QuizController.submit_answer(attempt_id, questions[0], correct_opt.id)
+    QuizController.submit_answer(attempt_id, questions[1], correct_opt.id)
+    QuizController.submit_answer(attempt_id, questions[2], wrong_opt.id)
+    
+    result = QuizController.complete_attempt(attempt_id, 120)
+    
+    assert result['correct'] == 2
+    assert result['total'] == 3
+    assert result['score'] == 20  # 2 * 10 points
+```
+
+**Test Validation (Edge Cases):**
+
+```python
+def test_validate_one_correct_answer(self, setup_database):
+    """Test: phải có đúng 1 đáp án đúng"""
+    # Không có đáp án đúng → ValueError
+    with pytest.raises(ValueError):
+        QuestionBankController.add_question_with_options(
+            "Test", 1, "Test",
+            [("A", False), ("B", False)]
+        )
+    
+    # Có 2 đáp án đúng → ValueError
+    with pytest.raises(ValueError):
+        QuestionBankController.add_question_with_options(
+            "Test", 1, "Test",
+            [("A", True), ("B", True)]
+        )
+
+def test_validate_minimum_options(self, setup_database):
+    """Test: phải có ít nhất 2 đáp án"""
+    with pytest.raises(ValueError):
+        QuestionBankController.add_question_with_options(
+            "Test", 1, "Test",
+            [("A", True)]  # Chỉ có 1 option
+        )
+```
+
+### 8.7. Chạy tests và xem kết quả
+
+**Output mẫu khi chạy tests:**
+
+```
+$ pytest tests/test_quiz_app.py -v
+
+tests/test_quiz_app.py::TestQuestionModel::test_create_question PASSED
+tests/test_quiz_app.py::TestQuestionModel::test_get_question_by_id PASSED
+tests/test_quiz_app.py::TestQuestionModel::test_get_questions_by_difficulty PASSED
+tests/test_quiz_app.py::TestQuestionModel::test_update_question PASSED
+tests/test_quiz_app.py::TestQuestionModel::test_delete_question PASSED
+tests/test_quiz_app.py::TestQuestionModel::test_random_question_selection PASSED
+tests/test_quiz_app.py::TestOptionModel::test_create_option PASSED
+tests/test_quiz_app.py::TestOptionModel::test_get_options_by_question PASSED
+tests/test_quiz_app.py::TestOptionModel::test_get_correct_option PASSED
+tests/test_quiz_app.py::TestQuizController::test_create_quiz_with_random_questions PASSED
+tests/test_quiz_app.py::TestQuizController::test_difficulty_matrix_selection PASSED
+tests/test_quiz_app.py::TestQuizController::test_submit_answer_correct PASSED
+tests/test_quiz_app.py::TestQuizController::test_submit_answer_incorrect PASSED
+tests/test_quiz_app.py::TestQuizController::test_scoring_calculation PASSED
+tests/test_quiz_app.py::TestQuestionBankController::test_add_question_with_options PASSED
+tests/test_quiz_app.py::TestQuestionBankController::test_validate_one_correct_answer PASSED
+tests/test_quiz_app.py::TestQuestionBankController::test_validate_minimum_options PASSED
+tests/test_quiz_app.py::TestQuestionBankController::test_question_bank_validation PASSED
+
+================== 18 passed in 2.34s ==================
+```
 
 ---
 
@@ -1235,6 +1411,30 @@ ttkbootstrap>=1.10.1
 - **Repository:** https://github.com/KhiemVo-Uit/quizz-app
 - **Issues:** https://github.com/KhiemVo-Uit/quizz-app/issues
 - **Documentation:** README.md
+
+### D. Tóm tắt README.md
+
+**Cài đặt:**
+```bash
+pip install -r requirements.txt
+python main.py
+```
+
+**Chạy tests:**
+```bash
+pytest tests/test_quiz_app.py -v
+```
+
+**Hướng dẫn sử dụng nhanh:**
+1. Chạy app → tự động tạo 100 câu hỏi mẫu
+2. "Làm bài thi" → chọn quiz, nhập tên, làm bài
+3. "Ngân hàng câu hỏi" → thêm/sửa/xóa câu hỏi
+4. "Thống kê" → xem phân tích kết quả
+
+**Tính năng đặc biệt:**
+- Random câu hỏi theo ma trận độ khó: `{'easy': 5, 'medium': 3, 'hard': 2}`
+- Timer cảnh báo: xanh (>5 phút) → cam (1-5 phút) → đỏ (<1 phút)
+- Auto-submit khi hết giờ
 
 ---
 
