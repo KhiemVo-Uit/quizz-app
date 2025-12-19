@@ -73,29 +73,51 @@ class QuizApp:
 
     def create_sidebar(self):
         """Create navigation sidebar"""
-        sidebar = ttk.Frame(self.main_container, bootstyle="dark", width=200)
+        sidebar = ttk.Frame(self.main_container, bootstyle="dark", width=240)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
         
         # App title
-        title = ttk.Label(sidebar, text="QUIZ APP", 
-                        font=(FONT_FAMILY, 16, 'bold'),
-                        bootstyle="inverse-dark")
-        title.pack(pady=20)
+        title_frame = ttk.Frame(sidebar, bootstyle="dark")
+        title_frame.pack(pady=(25, 5))
+        
+        ttk.Label(title_frame, text="QUIZ APP", 
+                 font=(FONT_FAMILY, 19, 'bold'),
+                 bootstyle="inverse-dark").pack()
+
+        
+        ttk.Separator(sidebar, bootstyle="secondary").pack(fill=tk.X, padx=15, pady=(5, 20))
         
         # Navigation buttons
+        nav_frame = ttk.Frame(sidebar, bootstyle="dark")
+        nav_frame.pack(fill=tk.BOTH, expand=True, padx=15)
+        
         buttons = [
             ("🏠 Trang chủ", self.show_home, "primary"),
             ("📝 Làm bài thi", self.show_quiz, "success"),
             ("📚 Ngân hàng câu hỏi", self.show_question_bank, "info"),
             ("📊 Thống kê", self.show_statistics, "warning"),
-            ("❌ Thoát", self.quit_app, "danger")
         ]
         
         for text, command, style in buttons:
-            btn = ttk.Button(sidebar, text=text, command=command,
-                          bootstyle=style, width=20)
-            btn.pack(fill=tk.X, padx=10, pady=5)
+            btn = ttk.Button(nav_frame, text=text, command=command,
+                          bootstyle=style,
+                          width=22,
+                          padding=(12, 12))
+            btn.pack(fill=tk.X, pady=(0, 10))
+            btn.configure(cursor="hand2")
+        
+        # Spacer
+        ttk.Frame(nav_frame, bootstyle="dark", height=10).pack()
+        
+        # Exit button (separated at bottom)
+        ttk.Separator(sidebar, bootstyle="secondary").pack(fill=tk.X, padx=15, pady=(0, 15))
+        exit_btn = ttk.Button(sidebar, text="❌ Thoát", command=self.quit_app,
+                            bootstyle="danger",
+                            width=22,
+                            padding=(12, 12))
+        exit_btn.pack(fill=tk.X, padx=15, pady=(0, 20))
+        exit_btn.configure(cursor="hand2")
 
     def clear_content(self):
         """Clear current content"""

@@ -87,11 +87,8 @@ class QuestionBankController:
         return result
 
     @staticmethod
-    def search_questions(keyword=None, difficulty=None, category=None, offset=0, limit=None):
-        """Search questions by various criteria and include their options"""
-        # Lấy toàn bộ câu hỏi trước
-        questions = Question.get_all()
-
+    def _filter_questions(questions, keyword=None, difficulty=None, category=None):
+        """Internal helper to filter questions by criteria (DRY principle)"""
         # Lọc theo từ khóa
         if keyword:
             keyword = keyword.lower()
@@ -104,6 +101,17 @@ class QuestionBankController:
         # Lọc theo danh mục
         if category:
             questions = [q for q in questions if q.category == category]
+
+        return questions
+
+    @staticmethod
+    def search_questions(keyword=None, difficulty=None, category=None, offset=0, limit=None):
+        """Search questions by various criteria and include their options"""
+        # Lấy toàn bộ câu hỏi trước
+        questions = Question.get_all()
+        
+        # Sử dụng helper function để lọc
+        questions = QuestionBankController._filter_questions(questions, keyword, difficulty, category)
 
         # Apply pagination if limit is specified
         if limit is not None:
@@ -124,20 +132,7 @@ class QuestionBankController:
     def count_questions(keyword=None, difficulty=None, category=None):
         """Count total questions matching the criteria"""
         questions = Question.get_all()
-
-        # Lọc theo từ khóa
-        if keyword:
-            keyword = keyword.lower()
-            questions = [q for q in questions if keyword in q.question_text.lower()]
-
-        # Lọc theo độ khó
-        if difficulty:
-            questions = [q for q in questions if q.difficulty == difficulty]
-
-        # Lọc theo danh mục
-        if category:
-            questions = [q for q in questions if q.category == category]
-
+        questions = QuestionBankController._filter_questions(questions, keyword, difficulty, category)
         return len(questions)
 
     @staticmethod

@@ -110,44 +110,28 @@ class QuestionBankView:
             except ValueError:
                 difficulty = None
 
-        # Get paginated questions
-        if not keyword and difficulty is None:
-            # Get total count first
-            if not load_more:
+        # Check count before loading if first load
+        if not load_more:
+            if not keyword and difficulty is None:
                 total_count = Question.count()
-                if total_count == 0:
-                    empty_frame = ttk.Frame(self.questions_container)
-                    empty_frame.pack(expand=True)
-                    ttk.Label(empty_frame, text="📋", font=(FONT_FAMILY, 48)).pack(pady=20)
-                    ttk.Label(empty_frame, text="Không có câu hỏi nào", font=(FONT_FAMILY, 14)).pack(pady=10)
-                    return
-            questions_data = QuestionBankController.search_questions(
-                keyword=None, difficulty=None, category=None,
-                offset=self.current_offset, limit=self.batch_size
-            )
-        else:
-            # Tìm kiếm theo từ khóa và/hoặc độ khó
-            if not load_more:
-                total = QuestionBankController.count_questions(
+            else:
+                total_count = QuestionBankController.count_questions(
                     keyword=keyword or None, difficulty=difficulty, category=None
                 )
-                if total == 0:
-                    empty_frame = ttk.Frame(self.questions_container)
-                    empty_frame.pack(expand=True)
-                    ttk.Label(empty_frame, text="📋", font=(FONT_FAMILY, 48)).pack(pady=20)
-                    ttk.Label(empty_frame, text="Không có câu hỏi nào", font=(FONT_FAMILY, 14)).pack(pady=10)
-                    return
-            questions_data = QuestionBankController.search_questions(
-                keyword=keyword or None, difficulty=difficulty, category=None,
-                offset=self.current_offset, limit=self.batch_size
-            )
+            
+            if total_count == 0:
+                self.show_empty_state()
+                return
+        
+        # Get paginated questions
+        questions_data = QuestionBankController.search_questions(
+            keyword=keyword or None, difficulty=difficulty, category=None,
+            offset=self.current_offset, limit=self.batch_size
+        )
         
         if not questions_data:
             if not load_more:
-                empty_frame = ttk.Frame(self.questions_container)
-                empty_frame.pack(expand=True)
-                ttk.Label(empty_frame, text="📋", font=(FONT_FAMILY, 48)).pack(pady=20)
-                ttk.Label(empty_frame, text="Không có câu hỏi nào", font=(FONT_FAMILY, 14)).pack(pady=10)
+                self.show_empty_state()
             else:
                 self.all_loaded = True
             return
@@ -211,6 +195,13 @@ class QuestionBankView:
         
         self.loading = True
         self.display_questions(load_more=True)
+
+    def show_empty_state(self):
+        """Show empty state when no questions found"""
+        empty_frame = ttk.Frame(self.questions_container)
+        empty_frame.pack(expand=True)
+        ttk.Label(empty_frame, text="📋", font=(FONT_FAMILY, 48)).pack(pady=20)
+        ttk.Label(empty_frame, text="Không có câu hỏi nào", font=(FONT_FAMILY, 14)).pack(pady=10)
 
     def create_question_card(self, parent, data):
         """Create card for a question"""
@@ -284,10 +275,12 @@ class QuestionBankView:
                          font=(FONT_FAMILY, 10),
                          bootstyle="secondary").pack(anchor=tk.W, padx=20)
 
-    def add_question(self):
-        """Open dialog to add new question"""
+    def create_question_dialog(self, question=None, options=None):
+        """Create dialog for add/edit question (DRY principle)"""
+        is_edit = question is not None
+        
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Thêm câu hỏi")
+        dialog.title("Sửa câu hỏi" if is_edit else "Thêm câu hỏi")
         dialog.geometry("600x500")
         dialog.transient(self.parent)
         dialog.grab_set()
@@ -295,6 +288,8 @@ class QuestionBankView:
         # Question text
         ttk.Label(dialog, text="Câu hỏi:", font=(FONT_FAMILY, 11, 'bold')).pack(pady=5)
         question_text = tk.Text(dialog, height=3, font=(FONT_FAMILY, 10))
+        if is_edit:
+            question_text.insert("1.0", question.question_text)
         question_text.pack(fill=tk.X, padx=20, pady=5)
         
         # Category
@@ -302,7 +297,7 @@ class QuestionBankView:
         cat_frame.pack(fill=tk.X, padx=20, pady=5)
         ttk.Label(cat_frame, text="Danh mục:").pack(side=tk.LEFT)
         category_entry = ttk.Entry(cat_frame)
-        category_entry.insert(0, "General")
+        category_entry.insert(0, question.category if is_edit else "General")
         category_entry.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
         
         # Difficulty
@@ -310,13 +305,13 @@ class QuestionBankView:
         diff_frame.pack(fill=tk.X, padx=20, pady=5)
         ttk.Label(diff_frame, text="Độ khó:").pack(side=tk.LEFT)
         
-        difficulty_var = tk.IntVar(value=1)
-        ttk.Radiobutton(diff_frame, text="Dễ", variable=difficulty_var, value=1).pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(diff_frame, text="Trung bình", variable=difficulty_var, value=2).pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(diff_frame, text="Khó", variable=difficulty_var, value=3).pack(side=tk.LEFT, padx=5)
+        difficulty_var = tk.IntVar(value=question.difficulty if is_edit else 1)
+        for text, value in [("Dễ", 1), ("Trung bình", 2), ("Khó", 3)]:
+            ttk.Radiobutton(diff_frame, text=text, variable=difficulty_var, value=value).pack(side=tk.LEFT, padx=5)
         
         # Options
-        ttk.Label(dialog, text="Đáp án (chọn đáp án đúng):", font=(FONT_FAMILY, 11, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text="Đáp án (chọn đáp án đúng):" if not is_edit else "Đáp án:", 
+                 font=(FONT_FAMILY, 11, 'bold')).pack(pady=10)
         
         options_frame = ttk.Frame(dialog)
         options_frame.pack(fill=tk.BOTH, expand=True, padx=20)
@@ -330,6 +325,12 @@ class QuestionBankView:
             
             ttk.Radiobutton(opt_frame, variable=correct_var, value=i).pack(side=tk.LEFT)
             entry = ttk.Entry(opt_frame, font=(FONT_FAMILY, 10))
+            
+            if is_edit and i < len(options):
+                entry.insert(0, options[i].option_text)
+                if options[i].is_correct:
+                    correct_var.set(i)
+            
             entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
             option_entries.append(entry)
         
@@ -354,97 +355,34 @@ class QuestionBankView:
                 return
             
             try:
-                QuestionBankController.add_question_with_options(
-                    q_text, difficulty, category, options_data
-                )
-                messagebox.showinfo("Thành công", "Đã thêm câu hỏi!")
+                if is_edit:
+                    QuestionBankController.update_question_with_options(
+                        question.id, q_text, difficulty, category, options_data
+                    )
+                    messagebox.showinfo("Thành công", "Đã cập nhật câu hỏi!")
+                else:
+                    QuestionBankController.add_question_with_options(
+                        q_text, difficulty, category, options_data
+                    )
+                    messagebox.showinfo("Thành công", "Đã thêm câu hỏi!")
+                
                 dialog.destroy()
                 self.show_question_list()
             except Exception as e:
                 messagebox.showerror("Lỗi", str(e))
         
-        ttk.Button(dialog, text="Thêm câu hỏi", command=submit).pack(pady=10)
+        btn_text = "Cập nhật" if is_edit else "Thêm câu hỏi"
+        ttk.Button(dialog, text=btn_text, command=submit).pack(pady=10)
+
+    def add_question(self):
+        """Open dialog to add new question"""
+        self.create_question_dialog()
 
     def edit_question(self, question):
         """Edit existing question"""
         from models.option import Option
         options = Option.get_by_question(question.id)
-        
-        dialog = tk.Toplevel(self.parent)
-        dialog.title("Sửa câu hỏi")
-        dialog.geometry("600x500")
-        dialog.transient(self.parent)
-        dialog.grab_set()
-        
-        # Question text
-        ttk.Label(dialog, text="Câu hỏi:", font=(FONT_FAMILY, 11, 'bold')).pack(pady=5)
-        question_text = tk.Text(dialog, height=3, font=(FONT_FAMILY, 10))
-        question_text.insert("1.0", question.question_text)
-        question_text.pack(fill=tk.X, padx=20, pady=5)
-        
-        # Category
-        cat_frame = ttk.Frame(dialog)
-        cat_frame.pack(fill=tk.X, padx=20, pady=5)
-        ttk.Label(cat_frame, text="Danh mục:").pack(side=tk.LEFT)
-        category_entry = ttk.Entry(cat_frame)
-        category_entry.insert(0, question.category)
-        category_entry.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
-        
-        # Difficulty
-        diff_frame = ttk.Frame(dialog)
-        diff_frame.pack(fill=tk.X, padx=20, pady=5)
-        ttk.Label(diff_frame, text="Độ khó:").pack(side=tk.LEFT)
-        
-        difficulty_var = tk.IntVar(value=question.difficulty)
-        ttk.Radiobutton(diff_frame, text="Dễ", variable=difficulty_var, value=1).pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(diff_frame, text="Trung bình", variable=difficulty_var, value=2).pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(diff_frame, text="Khó", variable=difficulty_var, value=3).pack(side=tk.LEFT, padx=5)
-        
-        # Options
-        ttk.Label(dialog, text="Đáp án:", font=(FONT_FAMILY, 11, 'bold')).pack(pady=10)
-        
-        options_frame = ttk.Frame(dialog)
-        options_frame.pack(fill=tk.BOTH, expand=True, padx=20)
-        
-        correct_var = tk.IntVar(value=0)
-        option_entries = []
-        
-        for i, option in enumerate(options[:4]):
-            opt_frame = ttk.Frame(options_frame)
-            opt_frame.pack(fill=tk.X, pady=5)
-            
-            if option.is_correct:
-                correct_var.set(i)
-            
-            ttk.Radiobutton(opt_frame, variable=correct_var, value=i).pack(side=tk.LEFT)
-            entry = ttk.Entry(opt_frame, font=(FONT_FAMILY, 10))
-            entry.insert(0, option.option_text)
-            entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-            option_entries.append(entry)
-        
-        # Submit button
-        def submit():
-            q_text = question_text.get("1.0", tk.END).strip()
-            category = category_entry.get().strip()
-            difficulty = difficulty_var.get()
-            
-            options_data = []
-            for i, entry in enumerate(option_entries):
-                opt_text = entry.get().strip()
-                if opt_text:
-                    options_data.append((opt_text, i == correct_var.get()))
-            
-            try:
-                QuestionBankController.update_question_with_options(
-                    question.id, q_text, difficulty, category, options_data
-                )
-                messagebox.showinfo("Thành công", "Đã cập nhật câu hỏi!")
-                dialog.destroy()
-                self.show_question_list()
-            except Exception as e:
-                messagebox.showerror("Lỗi", str(e))
-        
-        ttk.Button(dialog, text="Cập nhật", command=submit).pack(pady=10)
+        self.create_question_dialog(question, options)
 
     def delete_question(self, question):
         """Delete a question"""

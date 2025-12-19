@@ -23,11 +23,41 @@ class QuizView:
         self.time_remaining = 0
         
         self.show_quiz_list()
+    def _clear_widgets(self):
+        """Helper: Clear all widgets (DRY)"""
+        for widget in self.parent.winfo_children():
+            widget.destroy()
+
+    def _create_info_badge(self, parent, text, style="info"):
+        """Helper: Create info badge (DRY)"""
+        badge = ttk.Frame(parent, bootstyle="light", padding=(20, 12))
+        badge.pack(side=tk.LEFT, padx=12)
+        ttk.Label(badge, text=text, font=(FONT_FAMILY, 14, 'bold'), bootstyle=style).pack()
+
+    def _setup_scrollable_canvas(self, parent):
+        """Helper: Create scrollable canvas with mousewheel (DRY)"""
+        canvas = tk.Canvas(parent)
+        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
+        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
+        
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        return scrollable_frame
 
     def show_quiz_list(self):
         """Show list of available quizzes"""
-        for widget in self.parent.winfo_children():
-            widget.destroy()
+        self._clear_widgets()
         
         # Header with title and action button
         header = ttk.Frame(self.parent)
@@ -79,17 +109,8 @@ class QuizView:
         info_container = ttk.Frame(info_frame)
         info_container.pack(pady=(10, 25))
         
-        badge1 = ttk.Frame(info_container, bootstyle="light", padding=(20, 12))
-        badge1.pack(side=tk.LEFT, padx=12)
-        ttk.Label(badge1, text="⏱ 45 phút",
-                 font=(FONT_FAMILY, 14, 'bold'),
-                 bootstyle="info").pack()
-        
-        badge2 = ttk.Frame(info_container, bootstyle="light", padding=(20, 12))
-        badge2.pack(side=tk.LEFT, padx=12)
-        ttk.Label(badge2, text="📝 30 câu",
-                 font=(FONT_FAMILY, 14, 'bold'),
-                 bootstyle="info").pack()
+        self._create_info_badge(info_container, "⏱ 45 phút")
+        self._create_info_badge(info_container, "📝 30 câu")
         
         # Start button
         ttk.Button(info_frame, text="🚀 Bắt đầu làm bài",
@@ -197,8 +218,7 @@ class QuizView:
 
     def show_quiz_interface(self):
         """Show quiz taking interface"""
-        for widget in self.parent.winfo_children():
-            widget.destroy()
+        self._clear_widgets()
         
         # Header with gradient-like styling
         header = ttk.Frame(self.parent, bootstyle="primary")
@@ -311,7 +331,6 @@ class QuizView:
                                 bootstyle="primary",
                                 command=lambda q=question.id, o=option.id: self.save_answer(q, o))
             rb.pack(anchor=tk.W, pady=10, padx=20)
-            rb.config(font=(FONT_FAMILY, 13))
         
         # Update navigation buttons
         self.prev_btn.config(state=tk.NORMAL if self.current_question_index > 0 else tk.DISABLED)
@@ -401,8 +420,7 @@ class QuizView:
 
     def show_results(self, result):
         """Show quiz results"""
-        for widget in self.parent.winfo_children():
-            widget.destroy()
+        self._clear_widgets()
         
         container = ttk.Frame(self.parent)
         container.pack(expand=True)
@@ -472,45 +490,17 @@ class QuizView:
         """Show detailed answer review"""
         review_data = QuizController.get_attempt_review(self.current_attempt)
         
-        for widget in self.parent.winfo_children():
-            widget.destroy()
+        self._clear_widgets()
         
         # Title
         ttk.Label(self.parent, text="Xem lại đáp án",
                  font=(FONT_FAMILY, 16, 'bold')).pack(pady=20)
         
-        # Scrollable frame
-        canvas = tk.Canvas(self.parent)
-        scrollbar = ttk.Scrollbar(self.parent, orient=tk.VERTICAL, command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-        
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        
-        canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Enable mousewheel scrolling only when hovering over canvas
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
-        def _bind_mousewheel(event):
-            canvas.bind_all("<MouseWheel>", _on_mousewheel)
-        
-        def _unbind_mousewheel(event):
-            canvas.unbind_all("<MouseWheel>")
-        
-        canvas.bind("<Enter>", _bind_mousewheel)
-        canvas.bind("<Leave>", _unbind_mousewheel)
+        scrollable_frame = self._setup_scrollable_canvas(self.parent)
         
         # Show each answer
         for i, answer in enumerate(review_data['answers'], 1):
             self.create_review_item(scrollable_frame, i, answer)
-        
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         # Back button
         ttk.Button(self.parent, text="Quay lại",
