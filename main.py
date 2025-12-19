@@ -105,35 +105,104 @@ class QuizApp:
     def show_home(self):
         """Show home view"""
         self.clear_content()
-        
-        container = ttk.Frame(self.content_frame)
-        container.pack(expand=True)
-        
-        # Welcome message
-        welcome = ttk.Label(container, 
-                           text="Chào mừng đến với Quiz App",
-                           font=(FONT_FAMILY, FONT_SIZE_TITLE, 'bold'),
-                           bootstyle="primary")
-        welcome.pack(pady=20)
-        
-        description = ttk.Label(container,
-                               text="Hệ thống thi trắc nghiệm trực tuyến",
-                               font=(FONT_FAMILY, 12))
-        description.pack(pady=10)
-        
-        # Quick actions
-        actions_frame = ttk.Frame(container)
-        actions_frame.pack(pady=30)
-        
-        ttk.Button(actions_frame, text="Bắt đầu làm bài",
-                  command=self.show_quiz,
-                  bootstyle="success-outline",
-                  width=20).pack(side=tk.LEFT, padx=10)
-        
-        ttk.Button(actions_frame, text="Quản lý câu hỏi",
-                  command=self.show_question_bank,
-                  bootstyle="info-outline",
-                  width=20).pack(side=tk.LEFT, padx=10)
+
+        # Outer container
+        outer = ttk.Frame(self.content_frame)
+        outer.pack(fill=tk.BOTH, expand=True)
+
+        # Hero card (centered)
+        hero = ttk.Frame(outer, bootstyle="light")
+        hero.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+
+        hero_inner = ttk.Frame(hero)
+        hero_inner.pack(expand=True, fill=tk.BOTH)
+
+        ttk.Label(
+            hero_inner,
+            text="🎓",
+            font=(FONT_FAMILY, 72),
+            bootstyle="secondary"
+        ).pack(pady=(10, 0))
+
+        ttk.Label(
+            hero_inner,
+            text="Chào mừng đến với Quiz App",
+            font=(FONT_FAMILY, FONT_SIZE_TITLE + 14, 'bold'),
+            bootstyle="primary"
+        ).pack(pady=(10, 6))
+
+        ttk.Label(
+            hero_inner,
+            text="Luyện tập trắc nghiệm nhanh chóng • Quản lý ngân hàng câu hỏi • Theo dõi thống kê",
+            font=(FONT_FAMILY, 13),
+            bootstyle="secondary",
+            justify=tk.CENTER,
+            wraplength=860,
+        ).pack(pady=(0, 18))
+
+        ttk.Separator(hero_inner).pack(fill=tk.X, padx=60, pady=(0, 22))
+
+        # Small stats row
+        try:
+            from models.question import Question
+            total_questions = Question.count()
+        except Exception:
+            total_questions = 0
+
+        try:
+            from models.quiz import Quiz
+            total_quizzes = Quiz.count()
+        except Exception:
+            total_quizzes = 0
+
+        stats = ttk.Frame(hero_inner)
+        stats.pack(pady=(0, 22))
+
+        def _stat_item(parent, value, label, style):
+            card = ttk.Frame(parent, bootstyle="light", padding=(22, 14))
+            card.pack(side=tk.LEFT, padx=8)
+            ttk.Label(card, text=str(value), font=(FONT_FAMILY, 24, 'bold'), bootstyle=style).pack()
+            ttk.Label(card, text=label, font=(FONT_FAMILY, 11), bootstyle="secondary").pack(pady=(4, 0))
+
+        _stat_item(stats, total_questions, "Câu hỏi", "info")
+        _stat_item(stats, total_quizzes, "Bài thi", "warning")
+
+        # Primary actions
+        actions = ttk.Frame(hero_inner)
+        actions.pack(pady=(0, 8))
+
+        ttk.Button(
+            actions,
+            text="📝 Bắt đầu làm bài",
+            command=self.show_quiz,
+            bootstyle="success",
+            width=24,
+            padding=(18, 10),
+        ).pack(side=tk.LEFT, padx=10)
+
+        ttk.Button(
+            actions,
+            text="📚 Ngân hàng câu hỏi",
+            command=self.show_question_bank,
+            bootstyle="info",
+            width=24,
+            padding=(18, 10),
+        ).pack(side=tk.LEFT, padx=10)
+
+        ttk.Button(
+            actions,
+            text="📊 Xem thống kê",
+            command=self.show_statistics,
+            bootstyle="warning",
+            width=24,
+            padding=(18, 10),
+        ).pack(side=tk.LEFT, padx=10)
+
+        ttk.Label(
+            hero_inner,
+            font=(FONT_FAMILY, 11),
+            bootstyle="secondary",
+        ).pack(pady=(14, 0))
 
     def show_quiz(self):
         """Show quiz view"""

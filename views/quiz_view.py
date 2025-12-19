@@ -31,15 +31,15 @@ class QuizView:
         
         # Header with title and action button
         header = ttk.Frame(self.parent)
-        header.pack(fill=tk.X, padx=30, pady=20)
+        header.pack(fill=tk.X, padx=20, pady=15)
         
         ttk.Label(header, text="📝 Bài thi Kỹ thuật lập trình Python", 
-                 font=(FONT_FAMILY, 20, 'bold'),
+                 font=(FONT_FAMILY, 24, 'bold'),
                  bootstyle="primary").pack(side=tk.LEFT)
         
         # Main container with centered content
         container = ttk.Frame(self.parent)
-        container.pack(fill=tk.BOTH, expand=True, padx=30, pady=10)
+        container.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         # Center frame
         center_frame = ttk.Frame(container)
@@ -47,46 +47,56 @@ class QuizView:
         
         # Quiz card
         card = ttk.Frame(center_frame, bootstyle="light")
-        card.pack(fill=tk.X, pady=20, padx=50)
+        card.pack(fill=tk.BOTH, expand=True, pady=20, padx=40)
         
-        inner = ttk.Frame(card, relief=tk.SOLID, borderwidth=1)
+        inner = ttk.Frame(card, relief=tk.SOLID, borderwidth=2)
         inner.pack(fill=tk.BOTH, expand=True)
         
         info_frame = ttk.Frame(inner)
-        info_frame.pack(padx=40, pady=30)
+        info_frame.pack(padx=60, pady=50, fill=tk.BOTH, expand=True)
+        
+        # Icon
+        ttk.Label(info_frame, text="📚",
+                 font=(FONT_FAMILY, 56)).pack(pady=(0, 15))
         
         # Title
-        ttk.Label(info_frame, text="📚 Kỹ thuật lập trình Python",
-                 font=(FONT_FAMILY, 16, 'bold'),
-                 bootstyle="primary").pack(pady=(0, 10))
+        ttk.Label(info_frame, text="Kỹ thuật lập trình Python",
+                 font=(FONT_FAMILY, 22, 'bold'),
+                 bootstyle="primary").pack(pady=(0, 15))
         
         # Description
         ttk.Label(info_frame, text="Bài thi gồm 30 câu hỏi ngẫu nhiên",
-                 font=(FONT_FAMILY, 11),
-                 bootstyle="secondary").pack(pady=5)
+                 font=(FONT_FAMILY, 14),
+                 bootstyle="secondary").pack(pady=8)
         
         ttk.Label(info_frame, text="10 câu dễ • 10 câu trung bình • 10 câu khó",
-                 font=(FONT_FAMILY, 10),
-                 bootstyle="info").pack(pady=5)
+                 font=(FONT_FAMILY, 13),
+                 bootstyle="info").pack(pady=8)
+        
+        ttk.Separator(info_frame).pack(fill=tk.X, padx=80, pady=20)
         
         # Info badges
         info_container = ttk.Frame(info_frame)
-        info_container.pack(pady=(15, 20))
+        info_container.pack(pady=(10, 25))
         
-        ttk.Label(info_container, 
-                 text="⏱ 45 phút",
-                 font=(FONT_FAMILY, 11),
-                 bootstyle="info").pack(side=tk.LEFT, padx=15)
-        ttk.Label(info_container, 
-                 text="📝 30 câu",
-                 font=(FONT_FAMILY, 11),
-                 bootstyle="info").pack(side=tk.LEFT, padx=15)
+        badge1 = ttk.Frame(info_container, bootstyle="light", padding=(20, 12))
+        badge1.pack(side=tk.LEFT, padx=12)
+        ttk.Label(badge1, text="⏱ 45 phút",
+                 font=(FONT_FAMILY, 14, 'bold'),
+                 bootstyle="info").pack()
+        
+        badge2 = ttk.Frame(info_container, bootstyle="light", padding=(20, 12))
+        badge2.pack(side=tk.LEFT, padx=12)
+        ttk.Label(badge2, text="📝 30 câu",
+                 font=(FONT_FAMILY, 14, 'bold'),
+                 bootstyle="info").pack()
         
         # Start button
         ttk.Button(info_frame, text="🚀 Bắt đầu làm bài",
                   command=self.start_dynamic_quiz,
                   bootstyle="success",
-                  width=20).pack(pady=10)
+                  width=22,
+                  padding=(20, 12)).pack(pady=15)
 
     def start_dynamic_quiz(self):
         """Start quiz by creating new random questions each time"""
@@ -117,8 +127,8 @@ class QuizView:
         # Center the dialog
         name_dialog.update_idletasks()
         x = (name_dialog.winfo_screenwidth() // 2) - (400 // 2)
-        y = (name_dialog.winfo_screenheight() // 2) - (200 // 2)
-        name_dialog.geometry(f"400x200+{x}+{y}")
+        y = (name_dialog.winfo_screenheight() // 2) - (250 // 2)
+        name_dialog.geometry(f"400x250+{x}+{y}")
         
         container = ttk.Frame(name_dialog)
         container.pack(expand=True, fill=tk.BOTH, padx=30, pady=30)
@@ -164,47 +174,6 @@ class QuizView:
                   width=20).pack(pady=15)
         name_entry.bind('<Return>', lambda e: submit_name())
 
-    def start_quiz(self, quiz):
-        """Start taking a quiz"""
-        # Get student name
-        name_dialog = tk.Toplevel(self.parent)
-        name_dialog.title("Thông tin sinh viên")
-        name_dialog.geometry("400x200")
-        name_dialog.transient(self.parent)
-        name_dialog.grab_set()
-        
-        # Center the dialog
-        name_dialog.update_idletasks()
-        x = (name_dialog.winfo_screenwidth() // 2) - (400 // 2)
-        y = (name_dialog.winfo_screenheight() // 2) - (200 // 2)
-        name_dialog.geometry(f"400x200+{x}+{y}")
-        
-        container = ttk.Frame(name_dialog)
-        container.pack(expand=True, fill=tk.BOTH, padx=30, pady=30)
-        
-        ttk.Label(container, text="👤 Nhập tên của bạn:",
-                 font=(FONT_FAMILY, 13, 'bold'),
-                 bootstyle="primary").pack(pady=(0, 15))
-        
-        name_entry = ttk.Entry(container, font=(FONT_FAMILY, 12), width=30)
-        name_entry.pack(pady=10)
-        name_entry.focus()
-        
-        def submit_name():
-            student_name = name_entry.get().strip()
-            if not student_name:
-                messagebox.showwarning("Cảnh báo", "Vui lòng nhập tên!")
-                return
-            
-            name_dialog.destroy()
-            self.initialize_quiz(quiz, student_name)
-        
-        ttk.Button(container, text="🚀 Bắt đầu làm bài",
-                  command=submit_name,
-                  bootstyle="success",
-                  width=20).pack(pady=15)
-        name_entry.bind('<Return>', lambda e: submit_name())
-
     def initialize_quiz(self, quiz, student_name):
         """Initialize quiz session"""
         # Get quiz data with randomly selected questions
@@ -233,47 +202,50 @@ class QuizView:
         
         # Header with gradient-like styling
         header = ttk.Frame(self.parent, bootstyle="primary")
-        header.pack(fill=tk.X, padx=30, pady=(20, 15))
+        header.pack(fill=tk.X, padx=20, pady=(15, 12))
         
         header_inner = ttk.Frame(header)
-        header_inner.pack(fill=tk.BOTH, expand=True, padx=20, pady=15)
+        header_inner.pack(fill=tk.BOTH, expand=True, padx=25, pady=18)
         
         ttk.Label(header_inner, text=f"📝 {self.current_quiz['quiz'].title}",
-                 font=(FONT_FAMILY, 16, 'bold'),
+                 font=(FONT_FAMILY, 20, 'bold'),
                  bootstyle="inverse-primary").pack(side=tk.LEFT)
         
         self.timer_label = ttk.Label(header_inner, text="",
-                                     font=(FONT_FAMILY, 16, 'bold'),
+                                     font=(FONT_FAMILY, 20, 'bold'),
                                      bootstyle="inverse-primary")
         self.timer_label.pack(side=tk.RIGHT)
         
         # Question container with card styling
         container_outer = ttk.Frame(self.parent)
-        container_outer.pack(fill=tk.BOTH, expand=True, padx=30, pady=10)
+        container_outer.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         self.question_container = ttk.Frame(container_outer, bootstyle="light")
-        self.question_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.question_container.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
         
         # Navigation buttons with better styling
         nav_frame = ttk.Frame(self.parent)
-        nav_frame.pack(fill=tk.X, padx=30, pady=(10, 20))
+        nav_frame.pack(fill=tk.X, padx=20, pady=(10, 20))
         
         self.prev_btn = ttk.Button(nav_frame, text="◀ Câu trước",
                                    command=self.previous_question,
                                    bootstyle="secondary-outline",
-                                   width=15)
+                                   width=18,
+                                   padding=(15, 10))
         self.prev_btn.pack(side=tk.LEFT)
         
         self.next_btn = ttk.Button(nav_frame, text="Câu sau ▶",
                                    command=self.next_question,
                                    bootstyle="primary",
-                                   width=15)
+                                   width=18,
+                                   padding=(15, 10))
         self.next_btn.pack(side=tk.RIGHT)
         
         self.submit_btn = ttk.Button(nav_frame, text="✅ Nộp bài",
                                      command=self.submit_quiz,
                                      bootstyle="success",
-                                     width=15)
+                                     width=18,
+                                     padding=(15, 10))
         
         # Show first question
         self.show_question()
@@ -293,42 +265,44 @@ class QuizView:
         
         # Question card
         q_card = ttk.Frame(self.question_container)
-        q_card.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        q_card.pack(fill=tk.BOTH, expand=True, padx=30, pady=30)
         
         # Question header
         header = ttk.Frame(q_card)
-        header.pack(fill=tk.X, pady=(0, 15))
+        header.pack(fill=tk.X, pady=(0, 20))
         
         ttk.Label(header,
                  text=f"📝 Câu {self.current_question_index + 1}/{len(self.current_quiz['questions'])}",
-                 font=(FONT_FAMILY, 14, 'bold'),
+                 font=(FONT_FAMILY, 18, 'bold'),
                  bootstyle="primary").pack(side=tk.LEFT)
         
         # Difficulty badge
         difficulty_text = {1: "Dễ", 2: "Trung bình", 3: "Khó"}
         difficulty_style = {1: "success", 2: "warning", 3: "danger"}
-        ttk.Label(header,
+        badge = ttk.Frame(header, bootstyle="light", padding=(12, 6))
+        badge.pack(side=tk.RIGHT)
+        ttk.Label(badge,
                  text=difficulty_text.get(question.difficulty, 'N/A'),
-                 font=(FONT_FAMILY, 9),
-                 bootstyle=difficulty_style.get(question.difficulty, "secondary")).pack(side=tk.RIGHT)
+                 font=(FONT_FAMILY, 11, 'bold'),
+                 bootstyle=difficulty_style.get(question.difficulty, "secondary")).pack()
         
         # Question text
         ttk.Label(q_card,
                  text=question.question_text,
-                 font=(FONT_FAMILY, 13),
-                 wraplength=900).pack(anchor=tk.W, pady=(0, 20))
+                 font=(FONT_FAMILY, 15),
+                 wraplength=900).pack(anchor=tk.W, pady=(0, 25))
         
         # Options with better styling
         options_label = ttk.Label(q_card, text="Chọn đáp án:",
-                                 font=(FONT_FAMILY, 11, 'bold'),
+                                 font=(FONT_FAMILY, 13, 'bold'),
                                  bootstyle="secondary")
-        options_label.pack(anchor=tk.W, pady=(0, 10))
+        options_label.pack(anchor=tk.W, pady=(0, 15))
         
         self.selected_option = tk.IntVar(value=self.answers.get(question.id, -1))
         
         for i, option in enumerate(options, 1):
-            option_frame = ttk.Frame(q_card, bootstyle="light")
-            option_frame.pack(fill=tk.X, pady=4, padx=10)
+            option_frame = ttk.Frame(q_card, bootstyle="light", padding=(5, 5))
+            option_frame.pack(fill=tk.X, pady=6, padx=15)
             
             rb = ttk.Radiobutton(option_frame,
                                 text=f"{chr(64+i)}. {option.option_text}",
@@ -336,7 +310,8 @@ class QuizView:
                                 value=option.id,
                                 bootstyle="primary",
                                 command=lambda q=question.id, o=option.id: self.save_answer(q, o))
-            rb.pack(anchor=tk.W, pady=8, padx=15)
+            rb.pack(anchor=tk.W, pady=10, padx=20)
+            rb.config(font=(FONT_FAMILY, 13))
         
         # Update navigation buttons
         self.prev_btn.config(state=tk.NORMAL if self.current_question_index > 0 else tk.DISABLED)
@@ -432,16 +407,19 @@ class QuizView:
         container = ttk.Frame(self.parent)
         container.pack(expand=True)
         
-        ttk.Label(container, text="🎉 Kết quả bài thi",
-                 font=(FONT_FAMILY, 18, 'bold'),
-                 bootstyle="primary").pack(pady=20)
+        ttk.Label(container, text="🎉",
+                 font=(FONT_FAMILY, 56)).pack(pady=(20, 10))
+        
+        ttk.Label(container, text="Kết quả bài thi",
+                 font=(FONT_FAMILY, 24, 'bold'),
+                 bootstyle="primary").pack(pady=(0, 20))
         
         # Score card
         score_card = ttk.Frame(container, bootstyle="light")
-        score_card.pack(pady=10, padx=50)
+        score_card.pack(pady=15, padx=50)
         
         score_inner = ttk.Frame(score_card)
-        score_inner.pack(padx=40, pady=30)
+        score_inner.pack(padx=60, pady=40)
         
         # Score with color based on percentage
         percentage = result['correct'] / result['total'] * 100
@@ -450,13 +428,15 @@ class QuizView:
         
         score_label = tk.Label(score_inner,
                               text=f"{result['score']}/10",
-                              font=(FONT_FAMILY, 48, 'bold'),
+                              font=(FONT_FAMILY, 64, 'bold'),
                               fg=score_color)
-        score_label.pack(pady=10)
+        score_label.pack(pady=12)
         
         ttk.Label(score_inner, text="điểm",
-                 font=(FONT_FAMILY, 14),
+                 font=(FONT_FAMILY, 18),
                  bootstyle="secondary").pack()
+        
+        ttk.Separator(container).pack(fill=tk.X, padx=120, pady=20)
         
         # Stats
         stats_frame = ttk.Frame(container)
@@ -464,27 +444,29 @@ class QuizView:
         
         ttk.Label(stats_frame,
                  text=f"✓ Số câu đúng: {result['correct']}/{result['total']}",
-                 font=(FONT_FAMILY, 13),
-                 bootstyle=score_style).pack(pady=5)
+                 font=(FONT_FAMILY, 16),
+                 bootstyle=score_style).pack(pady=8)
         
         ttk.Label(stats_frame,
                  text=f"📊 Tỷ lệ đúng: {percentage:.1f}%",
-                 font=(FONT_FAMILY, 13),
-                 bootstyle="info").pack(pady=5)
+                 font=(FONT_FAMILY, 16),
+                 bootstyle="info").pack(pady=8)
         
         # Action buttons
         btn_frame = ttk.Frame(container)
-        btn_frame.pack(pady=30)
+        btn_frame.pack(pady=35)
         
         ttk.Button(btn_frame, text="📋 Xem chi tiết",
                   command=lambda: self.show_review(),
                   bootstyle="info",
-                  width=15).pack(side=tk.LEFT, padx=10)
+                  width=18,
+                  padding=(15, 10)).pack(side=tk.LEFT, padx=12)
         
         ttk.Button(btn_frame, text="📝 Làm bài khác",
                   bootstyle="success-outline",
-                  width=15,
-                  command=self.show_quiz_list).pack(side=tk.LEFT, padx=10)
+                  width=18,
+                  padding=(15, 10),
+                  command=self.show_quiz_list).pack(side=tk.LEFT, padx=12)
 
     def show_review(self):
         """Show detailed answer review"""
