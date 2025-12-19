@@ -13,13 +13,13 @@
 
 ## 👥 PHÂN CÔNG 5 THÀNH VIÊN
 
-| STT   | Thành viên       | Nhiệm vụ chính                      | Layer          | Độ khó     |
-| ----- | ---------------- | ----------------------------------- | -------------- | ---------- |
-| **1** | **CƯỜNG** | **DATABASE + ALL MODELS** + BÁO CÁO          | Data Layer     | ⭐⭐⭐⭐⭐ |
-| **2** | **KHIÊM** | **ALL CONTROLLERS**   + CHIA VIỆC              | Business Logic | ⭐⭐⭐⭐⭐ |
-| **3** | **NHUNG** | **QUIZ VIEW** + SLIDE                      | Presentation   | ⭐⭐⭐⭐   |
-| **4** | **LỢI** | **QUESTION BANK VIEW** + STATISTICS             | Presentation   | 
-| **5** | **ENGLISH** |  **MAIN APP  + TESTING** + THUYẾT TRÌNH | Integration    | ⭐⭐⭐⭐⭐ |
+| STT   | Thành viên  | Nhiệm vụ chính                        | Layer          | Độ khó     |
+| ----- | ----------- | ------------------------------------- | -------------- | ---------- |
+| **1** | **CƯỜNG**   | **DATABASE + ALL MODELS** + BÁO CÁO   | Data Layer     | ⭐⭐⭐⭐⭐ |
+| **2** | **KHIÊM**   | **ALL CONTROLLERS** + CHIA VIỆC       | Business Logic | ⭐⭐⭐⭐⭐ |
+| **3** | **NHUNG**   | **QUIZ VIEW** + SLIDE                 | Presentation   | ⭐⭐⭐⭐   |
+| **4** | **LỢI**     | **QUESTION BANK VIEW** + STATISTICS   | Presentation   |
+| **5** | **ENGLISH** | **MAIN APP + TESTING** + THUYẾT TRÌNH | Integration    | ⭐⭐⭐⭐⭐ |
 
 ---
 
@@ -114,10 +114,11 @@ utils/
 
    - `add_question_with_options()` thêm câu hỏi + options
    - `update_question_with_options()` cập nhật
-   - `delete_question_with_options()` xóa cascade
-   - `validate_question_options()` validation logic
-   - `search_questions()` tìm kiếm
-   - `filter_questions()` lọc theo difficulty/category
+   - `delete_question()` xóa cascade
+   - `search_questions()` tìm kiếm và trả về kèm options, hỗ trợ pagination (offset, limit)
+   - `count_questions()` đếm tổng số câu hỏi theo bộ lọc
+   - `get_all_questions_with_options()` lấy tất cả câu hỏi + options
+   - `validate_question_bank()` kiểm tra tính toàn vẹn
 
 3. **Sample Data Generator**
 
@@ -172,10 +173,12 @@ views/
 
 3. **Quiz Taking Screen** (Màn hình chính - phức tạp nhất)
 
+   - **Đã tối ưu:** Xóa hàm `start_quiz()` trùng lặp, chỉ giữ `start_dynamic_quiz()`
+   - **UI đã phóng to:** Font lớn hơn, padding nhiều hơn, nút to rõ hơn
    - **Display:**
 
-     - Question text với số thứ tự
-     - 4 options với radio buttons
+     - Question text với số thứ tự (font 18, bold)
+     - 4 options với radio buttons (font 13)
      - Question navigation (Previous/Next)
 
    - **Timer:**
@@ -237,10 +240,12 @@ views/
 
 1. **Question List Screen**
 
-   - TreeView/Table hiển thị tất cả câu hỏi
-   - Columns: ID, Question Text (truncated), Difficulty, Category
-   - Sorting by columns
-   - Toolbar với buttons: Add, Edit, Delete, Refresh
+   - Card-based layout hiển thị danh sách câu hỏi
+   - Hiển thị: ID, Question Text, Difficulty, Category, All Options
+   - **Lazy Loading:** Chỉ load 10 câu mỗi lần, kéo xuống tự động load thêm
+   - Toolbar với buttons: Add, Edit, Delete
+   - **Search box:** Tìm kiếm theo nội dung câu hỏi (real-time)
+   - **Filter radio buttons:** Lọc theo độ khó (Tất cả/Dễ/Trung bình/Khó)
 
 2. **Add Question Form** (Form phức tạp)
 
@@ -271,13 +276,12 @@ views/
    - Cascade delete options
    - Success/error notification
 
-5. **Search & Filter**
+5. **Search & Filter** ✅ Đã hoàn thành
 
-   - **Search box:** Tìm theo question text
-   - **Filter dropdown 1:** All / Easy / Medium / Hard
-   - **Filter dropdown 2:** All Categories / Specific
-   - Real-time filtering
-   - Clear filters button
+   - **Search box:** Tìm theo question text (nhấn Enter hoặc nút Tìm)
+   - **Filter radio buttons:** Tất cả / Dễ / Trung bình / Khó
+   - Kết hợp tìm kiếm + filter độ khó
+   - **Lazy loading:** Tự động load thêm kết quả khi scroll
 
 6. **Question Details (Optional)**
    - Click vào question → hiển thị popup
@@ -288,12 +292,13 @@ views/
 
 #### ✅ Deliverables:
 
-- [ ] Question List với CRUD operations
-- [ ] Add/Edit forms với validation
-- [ ] Search & filter functionality
-- [ ] Delete với confirmation
-- [ ] Error handling & user feedback
-- [ ] UI/UX intuitive
+- [✓] Question List với CRUD operations (Card-based layout)
+- [✓] Add/Edit forms với validation
+- [✓] Search & filter functionality (Tìm kiếm + Lọc độ khó)
+- [✓] Lazy loading (Load 10 câu mỗi lần)
+- [✓] Delete với confirmation
+- [✓] Error handling & user feedback
+- [✓] UI/UX intuitive và đã phóng to
 
 #### ⏱️ Timeline: 7-10 ngày
 
@@ -619,35 +624,37 @@ Day 22-28:
 
 ### ☑️ Thành viên B - Business Logic
 
-- [ ] Quiz controller (9+ methods)
-- [ ] Question bank controller (6+ methods)
-- [ ] Sample data (30+ questions)
-- [ ] Scoring algorithm implemented
-- [ ] Difficulty matrix working
+- [✓] Quiz controller (9+ methods)
+- [✓] Question bank controller (7+ methods, bao gồm pagination)
+- [✓] Sample data (30+ questions)
+- [✓] Scoring algorithm implemented
+- [✓] Difficulty matrix working
 - [ ] 6 unit tests cho controllers
 - [ ] Business logic documentation
 
 ### ☑️ Thành viên C - Quiz UI
 
-- [ ] Quiz list screen
-- [ ] Quiz selection screen
-- [ ] Quiz taking screen với timer
-- [ ] Results screen
-- [ ] Review screen với highlights
-- [ ] Timer color coding working
-- [ ] Auto-submit on timeout
-- [ ] All error handling
+- [✓] Quiz list screen (đã phóng to với icon, badges lớn hơn)
+- [✓] Quiz selection screen (nhập tên sinh viên)
+- [✓] Quiz taking screen với timer (font 20, padding lớn)
+- [✓] Results screen (điểm số font 64, stats to rõ)
+- [✓] Review screen với highlights
+- [✓] Timer color coding working
+- [✓] Auto-submit on timeout
+- [✓] All error handling
+- [✓] Xóa hàm trùng lặp (start_quiz)
 
 ### ☑️ Thành viên D - Question Bank UI
 
-- [ ] Question list với TreeView
-- [ ] Add question form
-- [ ] Edit question form
-- [ ] Delete với confirmation
-- [ ] Search functionality
-- [ ] Filter by difficulty
-- [ ] Filter by category
-- [ ] All validation working
+- [✓] Question list với Card-based layout
+- [✓] Add question form
+- [✓] Edit question form
+- [✓] Delete với confirmation
+- [✓] Search functionality (Tìm kiếm theo nội dung)
+- [✓] Filter by difficulty (Radio buttons)
+- [✓] Lazy loading (10 câu mỗi lần)
+- [✓] All validation working
+- [✓] UI đã phóng to và cân đối
 
 ### ☑️ Thành viên E - Integration
 
