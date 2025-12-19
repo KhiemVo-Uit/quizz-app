@@ -87,24 +87,58 @@ class QuestionBankController:
         return result
 
     @staticmethod
-    def search_questions(keyword=None, difficulty=None, category=None):
-        """Search questions by various criteria"""
+    def search_questions(keyword=None, difficulty=None, category=None, offset=0, limit=None):
+        """Search questions by various criteria and include their options"""
+        # Lấy toàn bộ câu hỏi trước
         questions = Question.get_all()
 
-        # Filter by keyword
+        # Lọc theo từ khóa
         if keyword:
             keyword = keyword.lower()
             questions = [q for q in questions if keyword in q.question_text.lower()]
 
-        # Filter by difficulty
+        # Lọc theo độ khó
         if difficulty:
             questions = [q for q in questions if q.difficulty == difficulty]
 
-        # Filter by category
+        # Lọc theo danh mục
         if category:
             questions = [q for q in questions if q.category == category]
 
-        return questions
+        # Apply pagination if limit is specified
+        if limit is not None:
+            questions = questions[offset:offset + limit]
+
+        # Gắn kèm options để view dùng trực tiếp
+        result = []
+        for question in questions:
+            options = Option.get_by_question(question.id)
+            result.append({
+                'question': question,
+                'options': options
+            })
+
+        return result
+
+    @staticmethod
+    def count_questions(keyword=None, difficulty=None, category=None):
+        """Count total questions matching the criteria"""
+        questions = Question.get_all()
+
+        # Lọc theo từ khóa
+        if keyword:
+            keyword = keyword.lower()
+            questions = [q for q in questions if keyword in q.question_text.lower()]
+
+        # Lọc theo độ khó
+        if difficulty:
+            questions = [q for q in questions if q.difficulty == difficulty]
+
+        # Lọc theo danh mục
+        if category:
+            questions = [q for q in questions if q.category == category]
+
+        return len(questions)
 
     @staticmethod
     def get_questions_by_difficulty_range(min_difficulty, max_difficulty):

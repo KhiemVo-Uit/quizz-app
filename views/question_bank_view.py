@@ -13,6 +13,10 @@ class QuestionBankView:
 
     def __init__(self, parent):
         self.parent = parent
+        self.current_offset = 0
+        self.batch_size = 10
+        self.loading = False
+        self.all_loaded = False
         self.show_question_list()
 
     def show_question_list(self):
@@ -52,6 +56,24 @@ class QuestionBankView:
                            value=value,
                            bootstyle="primary",
                            command=self.filter_questions).pack(side=tk.LEFT, padx=8)
+
+        # Search box
+        search_frame = ttk.Frame(filter_card)
+        search_frame.pack(fill=tk.X, padx=20, pady=(0, 15))
+
+        ttk.Label(search_frame, text="🔍 Tìm kiếm câu hỏi:",
+                 font=(FONT_FAMILY, 11, 'bold')).pack(side=tk.LEFT, padx=(0, 10))
+
+        self.search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=40)
+        search_entry.pack(side=tk.LEFT, padx=(0, 10), fill=tk.X, expand=True)
+
+        # Tìm kiếm khi nhấn Enter
+        search_entry.bind("<Return>", lambda event: self.filter_questions())
+
+        ttk.Button(search_frame, text="Tìm",
+                  command=self.filter_questions,
+                  bootstyle="secondary-outline").pack(side=tk.LEFT)
         
         # Questions container with scroll
         container = ttk.Frame(self.parent)
@@ -64,68 +86,131 @@ class QuestionBankView:
 
     def filter_questions(self):
         """Filter questions by difficulty"""
+        self.current_offset = 0
+        self.all_loaded = False
         self.display_questions()
 
-    def display_questions(self):
-        """Display filtered questions"""
-        for widget in self.questions_container.winfo_children():
-            widget.destroy()
+    def display_questions(self, load_more=False):
+        """Display filtered questions with lazy loading"""
+        if not load_more:
+            # Clear container for fresh display
+            for widget in self.questions_container.winfo_children():
+                widget.destroy()
+            self.current_offset = 0
+            self.all_loaded = False
         
-        # Get questions
-        difficulty = self.difficulty_var.get()
-        if difficulty == "all":
-            questions_data = QuestionBankController.get_all_questions_with_options()
+        # Get questions theo bộ lọc (độ khó + từ khóa)
+        difficulty_value = self.difficulty_var.get()
+        keyword = self.search_var.get().strip() if hasattr(self, 'search_var') else ''
+
+        difficulty = None
+        if difficulty_value != "all":
+            try:
+                difficulty = int(difficulty_value)
+            except ValueError:
+                difficulty = None
+
+        # Get paginated questions
+        if not keyword and difficulty is None:
+            # Get total count first
+            if not load_more:
+                total_count = Question.count()
+                if total_count == 0:
+                    empty_frame = ttk.Frame(self.questions_container)
+                    empty_frame.pack(expand=True)
+                    ttk.Label(empty_frame, text="📋", font=(FONT_FAMILY, 48)).pack(pady=20)
+                    ttk.Label(empty_frame, text="Không có câu hỏi nào", font=(FONT_FAMILY, 14)).pack(pady=10)
+                    return
+            questions_data = QuestionBankController.search_questions(
+                keyword=None, difficulty=None, category=None,
+                offset=self.current_offset, limit=self.batch_size
+            )
         else:
-            questions = Question.get_by_difficulty(int(difficulty))
-            questions_data = []
-            for q in questions:
-                from models.option import Option
-                options = Option.get_by_question(q.id)
-                questions_data.append({'question': q, 'options': options})
+            # Tìm kiếm theo từ khóa và/hoặc độ khó
+            if not load_more:
+                total = QuestionBankController.count_questions(
+                    keyword=keyword or None, difficulty=difficulty, category=None
+                )
+                if total == 0:
+                    empty_frame = ttk.Frame(self.questions_container)
+                    empty_frame.pack(expand=True)
+                    ttk.Label(empty_frame, text="📋", font=(FONT_FAMILY, 48)).pack(pady=20)
+                    ttk.Label(empty_frame, text="Không có câu hỏi nào", font=(FONT_FAMILY, 14)).pack(pady=10)
+                    return
+            questions_data = QuestionBankController.search_questions(
+                keyword=keyword or None, difficulty=difficulty, category=None,
+                offset=self.current_offset, limit=self.batch_size
+            )
         
         if not questions_data:
-            empty_frame = ttk.Frame(self.questions_container)
-            empty_frame.pack(expand=True)
-            
-            ttk.Label(empty_frame, text="📋",
-                     font=(FONT_FAMILY, 48)).pack(pady=20)
-            ttk.Label(empty_frame,
-                     text="Không có câu hỏi nào",
-                     font=(FONT_FAMILY, 14)).pack(pady=10)
+            if not load_more:
+                empty_frame = ttk.Frame(self.questions_container)
+                empty_frame.pack(expand=True)
+                ttk.Label(empty_frame, text="📋", font=(FONT_FAMILY, 48)).pack(pady=20)
+                ttk.Label(empty_frame, text="Không có câu hỏi nào", font=(FONT_FAMILY, 14)).pack(pady=10)
+            else:
+                self.all_loaded = True
             return
         
-        # Create scrollable frame
-        canvas = tk.Canvas(self.questions_container)
-        scrollbar = ttk.Scrollbar(self.questions_container, orient=tk.VERTICAL, command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        # Mark if we loaded less than batch_size (means no more data)
+        if len(questions_data) < self.batch_size:
+            self.all_loaded = True
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        
-        canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Enable mousewheel scrolling only when hovering over canvas
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
-        def _bind_mousewheel(event):
-            canvas.bind_all("<MouseWheel>", _on_mousewheel)
-        
-        def _unbind_mousewheel(event):
-            canvas.unbind_all("<MouseWheel>")
-        
-        canvas.bind("<Enter>", _bind_mousewheel)
-        canvas.bind("<Leave>", _unbind_mousewheel)
+        # Create scrollable frame on first load
+        if not load_more:
+            canvas = tk.Canvas(self.questions_container)
+            scrollbar = ttk.Scrollbar(self.questions_container, orient=tk.VERTICAL, command=canvas.yview)
+            self.scrollable_frame = ttk.Frame(canvas)
+            
+            self.scrollable_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+            
+            canvas.create_window((0, 0), window=self.scrollable_frame, anchor=tk.NW)
+            canvas.configure(yscrollcommand=scrollbar.set)
+            
+            # Detect scroll to bottom
+            def _on_scroll(*args):
+                scrollbar.set(*args)
+                # Check if scrolled near bottom
+                if float(args[1]) > 0.8 and not self.loading and not self.all_loaded:
+                    self.load_more_questions()
+            
+            canvas.configure(yscrollcommand=_on_scroll)
+            
+            # Enable mousewheel scrolling
+            def _on_mousewheel(event):
+                canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            
+            def _bind_mousewheel(event):
+                canvas.bind_all("<MouseWheel>", _on_mousewheel)
+            
+            def _unbind_mousewheel(event):
+                canvas.unbind_all("<MouseWheel>")
+            
+            canvas.bind("<Enter>", _bind_mousewheel)
+            canvas.bind("<Leave>", _unbind_mousewheel)
+            
+            self.canvas = canvas
+            canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         # Display each question
         for data in questions_data:
-            self.create_question_card(scrollable_frame, data)
+            self.create_question_card(self.scrollable_frame, data)
         
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # Update offset for next batch
+        self.current_offset += len(questions_data)
+        self.loading = False
+
+    def load_more_questions(self):
+        """Load more questions when scrolling down"""
+        if self.loading or self.all_loaded:
+            return
+        
+        self.loading = True
+        self.display_questions(load_more=True)
 
     def create_question_card(self, parent, data):
         """Create card for a question"""
