@@ -178,8 +178,10 @@ class TestQuizController:
         correct_option = Option.create(question_id, "Correct", True)
         Option.create(question_id, "Wrong", False)
         
-        quiz_id = Quiz.create("Test Quiz", "Desc", 300, 1)
-        Quiz.add_question(quiz_id, question_id, 1)
+        # Create quiz with random selection (questions are selected from pool)
+        quiz_id = QuizController.create_quiz_with_random_questions(
+            "Test Quiz", "Desc", 1, 300
+        )
         
         attempt_id = QuizController.start_attempt(quiz_id, "Test Student")
         
@@ -194,8 +196,10 @@ class TestQuizController:
         Option.create(question_id, "Correct", True)
         wrong_option = Option.create(question_id, "Wrong", False)
         
-        quiz_id = Quiz.create("Test Quiz", "Desc", 300, 1)
-        Quiz.add_question(quiz_id, question_id, 1)
+        # Create quiz with random selection (questions are selected from pool)
+        quiz_id = QuizController.create_quiz_with_random_questions(
+            "Test Quiz", "Desc", 1, 300
+        )
         
         attempt_id = QuizController.start_attempt(quiz_id, "Test Student")
         
@@ -213,9 +217,10 @@ class TestQuizController:
             Option.create(q_id, "Wrong", False)
             questions.append(q_id)
         
-        quiz_id = Quiz.create("Test", "Desc", 300, 3)
-        for i, q_id in enumerate(questions, 1):
-            Quiz.add_question(quiz_id, q_id, i)
+        # Create quiz with random selection (questions are selected from pool)
+        quiz_id = QuizController.create_quiz_with_random_questions(
+            "Test", "Desc", 3, 300
+        )
         
         attempt_id = QuizController.start_attempt(quiz_id, "Student")
         
@@ -234,7 +239,8 @@ class TestQuizController:
         
         assert result['correct'] == 2
         assert result['total'] == 3
-        assert result['score'] == 20  # 2 correct * 10 points
+        # Score is now calculated as (correct/total) * 10, so 2/3 * 10 = 6.7
+        assert result['score'] == round(2 * 10.0 / 3, 1)
 
 
 class TestQuestionBankController:
