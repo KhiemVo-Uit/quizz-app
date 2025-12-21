@@ -251,12 +251,22 @@ class StatisticsView:
             
             row_tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
             
+            # Format completed_at to show only time (HH:MM:SS)
+            date_str = "Chưa hoàn thành"
+            if attempt.completed_at:
+                try:
+                    # Extract only the time part (HH:MM:SS) from datetime string
+                    # Format: "2025-12-21 10:16:59.604551" -> "10:16:59"
+                    date_str = attempt.completed_at.split()[1].split('.')[0] if ' ' in attempt.completed_at else attempt.completed_at
+                except:
+                    date_str = attempt.completed_at
+            
             tree.insert('', tk.END, values=(
                 attempt.student_name,
                 f"{attempt.score:.1f}/10",
                 f"{attempt.correct_answers}/{attempt.total_questions}",
                 time_str,
-                attempt.completed_at or "Chưa hoàn thành"
+                date_str
             ), tags=(score_tag, row_tag))
         
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
