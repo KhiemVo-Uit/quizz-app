@@ -1,4 +1,5 @@
 """Quiz model"""
+import sqlite3
 from database.connection import db
 
 
@@ -16,17 +17,22 @@ class Quiz:
 
     @staticmethod
     def create(title, description='', time_limit=600, total_questions=10):
-        """Create a new quiz"""
+        """Create a new quiz (returns existing quiz_id if title already exists)"""
         conn = db.get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('''
-            INSERT INTO quizzes (title, description, time_limit, total_questions)
-            VALUES (?, ?, ?, ?)
-        ''', (title, description, time_limit, total_questions))
-
-        conn.commit()
-        return cursor.lastrowid
+        try:
+            cursor.execute('''
+                INSERT INTO quizzes (title, description, time_limit, total_questions)
+                VALUES (?, ?, ?, ?)
+            ''', (title, description, time_limit, total_questions))
+            conn.commit()
+            return cursor.lastrowid
+        except sqlite3.IntegrityError:
+            # Title already exists, return existing quiz ID
+            cursor.execute('SELECT id FROM quizzes WHERE title = ?', (title,))
+            row = cursor.fetchone()
+            return row['id'] if row else None
 
     @staticmethod
     def get_by_id(quiz_id):
@@ -35,6 +41,26 @@ class Quiz:
         cursor = conn.cursor()
 
         cursor.execute('SELECT * FROM quizzes WHERE id = ?', (quiz_id,))
+        row = cursor.fetchone()
+
+        if row:
+            return Quiz(
+                id=row['id'],
+                title=row['title'],
+                description=row['description'],
+                time_limit=row['time_limit'],
+                total_questions=row['total_questions'],
+                created_at=row['created_at']
+            )
+        return None
+
+    @staticmethod
+    def get_by_title(title):
+        """Get quiz by title"""
+        conn = db.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute('SELECT * FROM quizzes WHERE title = ?', (title,))
         row = cursor.fetchone()
 
         if row:
@@ -106,43 +132,8 @@ class Quiz:
         conn.commit()
         return cursor.rowcount > 0
 
-    @staticmethod
-    def add_question(quiz_id, question_id, order):
-        """Add a question to quiz"""
-        conn = db.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            INSERT INTO quiz_questions (quiz_id, question_id, question_order)
-            VALUES (?, ?, ?)
-        ''', (quiz_id, question_id, order))
-
-        conn.commit()
-        return cursor.lastrowid
-
-    @staticmethod
-    def get_questions(quiz_id):
-        """Get all questions for a quiz"""
-        conn = db.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            SELECT q.* 
-            FROM questions q
-            INNER JOIN quiz_questions qq ON q.id = qq.question_id
-            WHERE qq.quiz_id = ?
-            ORDER BY qq.question_order
-        ''', (quiz_id,))
-        rows = cursor.fetchall()
-
-        from models.question import Question
-        return [Question(
-            id=row['id'],
-            question_text=row['question_text'],
-            difficulty=row['difficulty'],
-            category=row['category'],
-            created_at=row['created_at']
-        ) for row in rows]
+    # Quiz questions are now generated randomly at attempt time
+    # No need to store quiz-question mapping
 
     @staticmethod
     def count():

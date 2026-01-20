@@ -62,7 +62,7 @@ class Database:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS quizzes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
+                title TEXT NOT NULL UNIQUE,
                 description TEXT,
                 time_limit INTEGER NOT NULL DEFAULT 600,
                 total_questions INTEGER NOT NULL,
@@ -73,19 +73,7 @@ class Database:
             )
         ''')
 
-        # Quiz questions mapping (for specific question selection)
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS quiz_questions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                quiz_id INTEGER NOT NULL,
-                question_id INTEGER NOT NULL,
-                question_order INTEGER NOT NULL,
-                FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
-                FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
-                CONSTRAINT unique_question_in_quiz UNIQUE(quiz_id, question_id),
-                CONSTRAINT unique_order_in_quiz UNIQUE(quiz_id, question_order)
-            )
-        ''')
+        # Quiz questions mapping removed - using random selection from question bank
 
         # Attempts table
         cursor.execute('''
@@ -126,7 +114,6 @@ class Database:
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_questions_difficulty ON questions(difficulty)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_questions_category ON questions(category)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_options_question ON options(question_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_quiz_questions_quiz ON quiz_questions(quiz_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_attempts_quiz ON attempts(quiz_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_attempt_answers_attempt ON attempt_answers(attempt_id)')
 
@@ -137,7 +124,7 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
 
-        tables = ['attempt_answers', 'attempts', 'quiz_questions', 'quizzes', 'options', 'questions']
+        tables = ['attempt_answers', 'attempts', 'quizzes', 'options', 'questions']
         for table in tables:
             cursor.execute(f'DROP TABLE IF EXISTS {table}')
 
