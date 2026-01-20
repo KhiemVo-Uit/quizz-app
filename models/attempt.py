@@ -24,7 +24,7 @@ class Attempt:
         """Create a new attempt"""
         conn = db.get_connection()
         cursor = conn.cursor()
-
+        Attempt.cleanup_abandoned_attempts()
         cursor.execute('''
             INSERT INTO attempts (quiz_id, student_name, total_questions)
             VALUES (?, ?, ?)
@@ -155,3 +155,18 @@ class Attempt:
         cursor.execute('DELETE FROM attempts WHERE id = ?', (attempt_id,))
         conn.commit()
         return cursor.rowcount > 0
+    @staticmethod
+    def cleanup_abandoned_attempts(hours_threshold=24):
+        """Delete abandoned attempts that were started but not completed within the threshold hours"""
+        conn = db.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(f'''
+            DELETE FROM attempts 
+            WHERE completed_at IS NULL 
+            AND started_at < datetime('now', '-{hours_threshold} hours')
+        ''')
+        
+        deleted_count = cursor.rowcount
+        conn.commit()
+        return deleted_count
