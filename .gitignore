@@ -1,3 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+quiz_app.db
+
 *.pyc
 __pycache__/
 *.db
