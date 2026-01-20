@@ -142,8 +142,8 @@ class QuizController:
             })
 
         return review_data
-#Cường
-@staticmethod
+
+    @staticmethod
     def get_question_statistics(question_id):
         """Get statistics for a specific question"""
         return Question.get_statistics(question_id)
