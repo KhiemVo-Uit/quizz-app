@@ -15,6 +15,39 @@ class StatisticsView:
         self.parent = parent
         self.show_statistics()
 
+    def _setup_scrollable_canvas(self, parent):
+        """Helper: Create scrollable canvas with mousewheel support (DRY)"""
+        canvas = tk.Canvas(parent)
+        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Enable mousewheel scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
+        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
+        
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        return scrollable_frame
+
+    def _show_empty_state(self, parent, icon="📊", message="Chưa có dữ liệu"):
+        """Helper: Show empty state message (DRY)"""
+        empty_frame = ttk.Frame(parent)
+        empty_frame.pack(expand=True)
+        ttk.Label(empty_frame, text=icon, font=(FONT_FAMILY, 48)).pack(pady=20)
+        ttk.Label(empty_frame, text=message, font=(FONT_FAMILY, 15)).pack(pady=10)
+
     def show_statistics(self):
         """Show statistics overview"""
         for widget in self.parent.winfo_children():
@@ -25,7 +58,7 @@ class StatisticsView:
         header.pack(fill=tk.X, padx=30, pady=20)
         
         ttk.Label(header, text="📊 Thống kê & Phân tích",
-                 font=(FONT_FAMILY, 20, 'bold'),
+                 font=(FONT_FAMILY, 22, 'bold'),
                  bootstyle="primary").pack(side=tk.LEFT)
         
         # Tabs with better styling
@@ -52,46 +85,13 @@ class StatisticsView:
         quizzes = Quiz.get_all()
         
         if not quizzes:
-            empty_frame = ttk.Frame(parent)
-            empty_frame.pack(expand=True)
-            
-            ttk.Label(empty_frame, text="📊",
-                     font=(FONT_FAMILY, 48)).pack(pady=20)
-            ttk.Label(empty_frame, text="Chưa có dữ liệu thống kê",
-                     font=(FONT_FAMILY, 14)).pack(pady=10)
+            self._show_empty_state(parent, "📊", "Chưa có dữ liệu thống kê")
             return
         
-        # Create scrollable frame
-        canvas = tk.Canvas(parent)
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-        
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        
-        canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Enable mousewheel scrolling only when hovering over canvas
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
-        def _bind_mousewheel(event):
-            canvas.bind_all("<MouseWheel>", _on_mousewheel)
-        
-        def _unbind_mousewheel(event):
-            canvas.unbind_all("<MouseWheel>")
-        
-        canvas.bind("<Enter>", _bind_mousewheel)
-        canvas.bind("<Leave>", _unbind_mousewheel)
+        scrollable_frame = self._setup_scrollable_canvas(parent)
         
         for quiz in quizzes:
             self.create_quiz_stats_card(scrollable_frame, quiz)
-        
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     def create_quiz_stats_card(self, parent, quiz):
         """Create statistics card for a quiz"""
@@ -102,7 +102,7 @@ class StatisticsView:
         
         if not stats or stats['total_attempts'] == 0:
             ttk.Label(card, text="📭 Chưa có lượt thi nào",
-                     font=(FONT_FAMILY, 11),
+                     font=(FONT_FAMILY, 13),
                      bootstyle="secondary").pack(pady=10)
             return
         
@@ -123,10 +123,10 @@ class StatisticsView:
             metric_frame.grid(row=i//2, column=i%2, padx=10, pady=5, sticky="ew")
             
             ttk.Label(metric_frame, text=label,
-                     font=(FONT_FAMILY, 9),
+                     font=(FONT_FAMILY, 11),
                      bootstyle="secondary").pack(anchor=tk.W)
             ttk.Label(metric_frame, text=value,
-                     font=(FONT_FAMILY, 13, 'bold'),
+                     font=(FONT_FAMILY, 15, 'bold'),
                      bootstyle=style).pack(anchor=tk.W)
         
         # Average time
@@ -138,10 +138,10 @@ class StatisticsView:
             avg_seconds = int(stats['avg_time']) % 60
             
             ttk.Label(time_frame, text="⏱ Thời gian trung bình:",
-                     font=(FONT_FAMILY, 9),
+                     font=(FONT_FAMILY, 11),
                      bootstyle="secondary").pack(anchor=tk.W)
             ttk.Label(time_frame, text=f"{avg_minutes}:{avg_seconds:02d}",
-                     font=(FONT_FAMILY, 13, 'bold'),
+                     font=(FONT_FAMILY, 15, 'bold'),
                      bootstyle="secondary").pack(anchor=tk.W)
         
         # Show recent attempts button
@@ -190,10 +190,10 @@ class StatisticsView:
                 item_frame.pack(side=tk.LEFT, padx=15)
                 
                 ttk.Label(item_frame, text=label,
-                         font=(FONT_FAMILY, 9),
+                         font=(FONT_FAMILY, 11),
                          bootstyle="secondary").pack(side=tk.LEFT, padx=5)
                 ttk.Label(item_frame, text=value,
-                         font=(FONT_FAMILY, 11, 'bold'),
+                         font=(FONT_FAMILY, 13, 'bold'),
                          bootstyle=style).pack(side=tk.LEFT)
         
         # Separator
@@ -208,8 +208,8 @@ class StatisticsView:
         
         # Style for treeview
         style = ttk.Style()
-        style.configure("Treeview", rowheight=30, font=(FONT_FAMILY, 10))
-        style.configure("Treeview.Heading", font=(FONT_FAMILY, 11, 'bold'))
+        style.configure("Treeview", rowheight=32, font=(FONT_FAMILY, 11))
+        style.configure("Treeview.Heading", font=(FONT_FAMILY, 12, 'bold'))
         
         tree.heading('student', text='👤 Sinh viên', anchor=tk.W)
         tree.heading('score', text='📊 Điểm', anchor=tk.CENTER)
@@ -292,52 +292,24 @@ class StatisticsView:
         questions = Question.get_all()
         
         if not questions:
-            ttk.Label(parent, text="Chưa có câu hỏi nào",
-                     font=(FONT_FAMILY, 12)).pack(pady=20)
+            self._show_empty_state(parent, "📋", "Chưa có câu hỏi nào")
             return
         
-        # Create scrollable frame
-        canvas = tk.Canvas(parent)
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-        
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        
-        canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Enable mousewheel scrolling only when hovering over canvas
-        def _on_mousewheel_qa(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
-        def _bind_mousewheel_qa(event):
-            canvas.bind_all("<MouseWheel>", _on_mousewheel_qa)
-        
-        def _unbind_mousewheel_qa(event):
-            canvas.unbind_all("<MouseWheel>")
-        
-        canvas.bind("<Enter>", _bind_mousewheel_qa)
-        canvas.bind("<Leave>", _unbind_mousewheel_qa)
+        scrollable_frame = self._setup_scrollable_canvas(parent)
         
         # Header
         header_frame = ttk.Frame(scrollable_frame)
         header_frame.pack(fill=tk.X, pady=10, padx=10)
         
         ttk.Label(header_frame, text="Phân tích tỷ lệ chọn đáp án",
-                 font=(FONT_FAMILY, 12, 'bold')).pack()
+                 font=(FONT_FAMILY, 14, 'bold')).pack()
         
         # Analyze each question
-        for question in questions[:50]:  # Limit to first 20 for performance
+        for question in questions[:50]:
             stats = QuizController.get_question_statistics(question.id)
             
             if stats['total_answers'] > 0:
                 self.create_question_analysis_card(scrollable_frame, question, stats)
-        
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     def create_question_analysis_card(self, parent, question, stats):
         """Create analysis card for a question"""
@@ -353,10 +325,10 @@ class StatisticsView:
         stats_frame.pack(fill=tk.X, pady=5)
         
         ttk.Label(stats_frame, text=f"Tổng lượt trả lời: {stats['total_answers']}",
-                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=10)
+                 font=(FONT_FAMILY, 11)).pack(side=tk.LEFT, padx=10)
         
         ttk.Label(stats_frame, text=f"Tỷ lệ đúng: {stats['correct_rate']:.1f}%",
-                 font=(FONT_FAMILY, 9, 'bold'),
+                 font=(FONT_FAMILY, 11, 'bold'),
                  foreground='green' if stats['correct_rate'] >= 50 else 'red').pack(side=tk.LEFT, padx=10)
         
         # Option distribution
@@ -370,7 +342,7 @@ class StatisticsView:
                 
                 opt_label = ttk.Label(dist_frame, 
                                      text=f"{marker} {opt['option_text'][:50]}: {percentage:.1f}% ({opt['selection_count']} lượt)",
-                                     font=(FONT_FAMILY, 8))
+                                     font=(FONT_FAMILY, 10))
                 opt_label.pack(anchor=tk.W, padx=20)
 
     def show_difficulty_analysis(self, parent):
@@ -380,23 +352,17 @@ class StatisticsView:
         header_frame.pack(fill=tk.X, padx=20, pady=15)
         
         ttk.Label(header_frame, text="🎯 Phân tích độ khó thực tế",
-                 font=(FONT_FAMILY, 16, 'bold'),
+                 font=(FONT_FAMILY, 18, 'bold'),
                  bootstyle="primary").pack(anchor=tk.W)
         
         ttk.Label(header_frame, text="So sánh độ khó được gán với tỷ lệ trả lời đúng thực tế",
-                 font=(FONT_FAMILY, 10),
+                 font=(FONT_FAMILY, 12),
                  bootstyle="secondary").pack(anchor=tk.W, pady=5)
         
         difficulty_data = QuizController.analyze_difficulty()
         
         if not difficulty_data:
-            empty_frame = ttk.Frame(parent)
-            empty_frame.pack(expand=True)
-            
-            ttk.Label(empty_frame, text="📊",
-                     font=(FONT_FAMILY, 48)).pack(pady=20)
-            ttk.Label(empty_frame, text="Chưa có dữ liệu để phân tích",
-                     font=(FONT_FAMILY, 12)).pack(pady=10)
+            self._show_empty_state(parent, "📊", "Chưa có dữ liệu để phân tích")
             return
         
         # Create main container with border
@@ -463,17 +429,11 @@ class StatisticsView:
         tree.configure(yscrollcommand=scrollbar.set)
         
         # Enable mousewheel scrolling
-        def _on_mousewheel_da(event):
+        def _on_mousewheel(event):
             tree.yview_scroll(int(-1*(event.delta/120)), "units")
         
-        def _bind_mousewheel_da(event):
-            tree.bind_all("<MouseWheel>", _on_mousewheel_da)
-        
-        def _unbind_mousewheel_da(event):
-            tree.unbind_all("<MouseWheel>")
-        
-        tree.bind("<Enter>", _bind_mousewheel_da)
-        tree.bind("<Leave>", _unbind_mousewheel_da)
+        tree.bind("<Enter>", lambda e: tree.bind_all("<MouseWheel>", _on_mousewheel))
+        tree.bind("<Leave>", lambda e: tree.unbind_all("<MouseWheel>"))
         
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -494,15 +454,15 @@ class StatisticsView:
         colors_frame.pack(side=tk.LEFT, padx=10)
         
         ttk.Label(colors_frame, text="🟢 Dễ   ", 
-                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+                 font=(FONT_FAMILY, 11)).pack(side=tk.LEFT, padx=5)
         ttk.Label(colors_frame, text="🟡 Trung bình   ", 
-                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+                 font=(FONT_FAMILY, 11)).pack(side=tk.LEFT, padx=5)
         ttk.Label(colors_frame, text="🔴 Khó", 
-                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+                 font=(FONT_FAMILY, 11)).pack(side=tk.LEFT, padx=5)
         
         # Note
         note_label = ttk.Label(legend, 
                               text="💡 Câu hỏi được sắp xếp từ khó nhất (tỷ lệ đúng thấp) đến dễ nhất",
-                              font=(FONT_FAMILY, 9, 'italic'),
+                              font=(FONT_FAMILY, 11, 'italic'),
                               bootstyle="secondary")
         note_label.pack(anchor=tk.W, pady=5)
