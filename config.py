@@ -51,15 +51,18 @@ COLOR_TEXT = '#212121'
 
 # Score/Difficulty colors (for legends and indicators)
 COLOR_GREEN = '#28a745'      # Easy/Good
-COLOR_YELLOW = '#ffc107'     # Medium
-COLOR_RED = "#dc35ad"        # Hard/Low
+COLOR_BLUE = '#0066cc'       # Good
+COLOR_YELLOW = '#e69500'     # Medium
+COLOR_RED = "#d63384"        # Hard/Low
 
-# Table row colors
-COLOR_ROW_HIGH_BG = '#d4edda'
-COLOR_ROW_HIGH_FG = '#155724'
-COLOR_ROW_MEDIUM_BG = '#fff3cd'
-COLOR_ROW_MEDIUM_FG = '#856404'
-COLOR_ROW_LOW_BG = '#f8d7da'
-COLOR_ROW_LOW_FG = '#721c24'
-COLOR_ROW_ODD = '#f8f9fa'
-COLOR_ROW_EVEN = '#ffffff'
+# Table row colors - Softer colors with better contrast
+COLOR_ROW_HIGH_BG = '#d4f4dd'    # Xanh lá nhạt hơn
+COLOR_ROW_HIGH_FG = "#1e7e34"    # Xanh lá đậm dễ đọc
+COLOR_ROW_GOOD_BG = '#cfe2ff'    # Xanh dương nhạt hơn
+COLOR_ROW_GOOD_FG = "#0056b3"    # Xanh dương đậm dễ đọc
+COLOR_ROW_MEDIUM_BG = '#fff3cd'  # Vàng nhạt
+COLOR_ROW_MEDIUM_FG = "#996600"  # Vàng nâu dễ đọc
+COLOR_ROW_LOW_BG = '#f8d7da'     # Hồng nhạt
+COLOR_ROW_LOW_FG = '#842029'     # Đỏ đậm dễ đọc
+COLOR_ROW_ODD = '#f8f9fa'        # Xám rất nhạt
+COLOR_ROW_EVEN = '#ffffff'       # Trắng

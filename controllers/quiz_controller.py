@@ -12,13 +12,7 @@ class QuizController:
 
     @staticmethod
     def create_quiz_with_random_questions(title, description, total_questions, time_limit, difficulty_matrix=None):
-        """
-        Create a quiz metadata (questions will be selected randomly when starting attempt)
-        If quiz with same title exists, returns existing quiz_id
-        
-        difficulty_matrix: dict like {'easy': 5, 'medium': 3, 'hard': 2}
-        Store in description for reference
-        """
+        """Create a quiz with random questions based on difficulty matrix"""
         # Check if quiz already exists by title
         existing_quiz = Quiz.get_by_title(title)
         if existing_quiz:

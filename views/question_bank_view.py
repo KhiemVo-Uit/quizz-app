@@ -281,9 +281,17 @@ class QuestionBankView:
         
         dialog = tk.Toplevel(self.parent)
         dialog.title("Sửa câu hỏi" if is_edit else "Thêm câu hỏi")
-        dialog.geometry("600x500")
+        dialog.geometry("700x600")
         dialog.transient(self.parent)
         dialog.grab_set()
+        
+        # Center dialog on screen
+        dialog.update_idletasks()
+        width = dialog.winfo_width()
+        height = dialog.winfo_height()
+        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (dialog.winfo_screenheight() // 2) - (height // 2)
+        dialog.geometry(f'{width}x{height}+{x}+{y}')
         
         # Question text
         ttk.Label(dialog, text="Câu hỏi:", font=(FONT_FAMILY, 11, 'bold')).pack(pady=5)

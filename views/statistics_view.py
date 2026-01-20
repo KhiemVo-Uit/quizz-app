@@ -6,9 +6,10 @@ from controllers.quiz_controller import QuizController
 from models.quiz import Quiz
 from models.attempt import Attempt
 from config import (
-    FONT_FAMILY, COLOR_GREEN, COLOR_YELLOW, COLOR_RED,
-    COLOR_ROW_HIGH_BG, COLOR_ROW_HIGH_FG, COLOR_ROW_MEDIUM_BG, COLOR_ROW_MEDIUM_FG,
-    COLOR_ROW_LOW_BG, COLOR_ROW_LOW_FG, COLOR_ROW_ODD, COLOR_ROW_EVEN
+    FONT_FAMILY, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW, COLOR_RED,
+    COLOR_ROW_HIGH_BG, COLOR_ROW_HIGH_FG, COLOR_ROW_GOOD_BG, COLOR_ROW_GOOD_FG,
+    COLOR_ROW_MEDIUM_BG, COLOR_ROW_MEDIUM_FG, COLOR_ROW_LOW_BG, COLOR_ROW_LOW_FG,
+    COLOR_ROW_ODD, COLOR_ROW_EVEN, WINDOW_WIDTH, WINDOW_HEIGHT
 )
 
 
@@ -165,7 +166,7 @@ class StatisticsView:
         """Show detailed attempt history"""
         dialog = tk.Toplevel(self.parent)
         dialog.title(f"Chi tiết - {quiz.title}")
-        dialog.geometry("1000x650")
+        dialog.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
         dialog.transient(self.parent)
         
         # Header
@@ -181,6 +182,8 @@ class StatisticsView:
                  bootstyle="secondary").pack(anchor=tk.W, pady=5)
         
         attempts = Attempt.get_by_quiz(quiz.id)
+        # Sort attempts from lowest to highest score (yếu đến giỏi)
+        attempts = sorted(attempts, key=lambda x: x.score)
         
         # Statistics summary
         if attempts:
@@ -236,6 +239,7 @@ class StatisticsView:
         
         # Configure tags for colors
         tree.tag_configure('high', background=COLOR_ROW_HIGH_BG, foreground=COLOR_ROW_HIGH_FG)
+        tree.tag_configure('good', background=COLOR_ROW_GOOD_BG, foreground=COLOR_ROW_GOOD_FG)
         tree.tag_configure('medium', background=COLOR_ROW_MEDIUM_BG, foreground=COLOR_ROW_MEDIUM_FG)
         tree.tag_configure('low', background=COLOR_ROW_LOW_BG, foreground=COLOR_ROW_LOW_FG)
         tree.tag_configure('oddrow', background=COLOR_ROW_ODD)
@@ -255,6 +259,8 @@ class StatisticsView:
             score_tag = ''
             if attempt.score >= 8:
                 score_tag = 'high'
+            elif attempt.score >= 6.5:
+                score_tag = 'good'
             elif attempt.score >= 5:
                 score_tag = 'medium'
             else:
@@ -294,7 +300,8 @@ class StatisticsView:
         legend_frame.pack(fill=tk.X, pady=5)
         
         self._create_legend_item(legend_frame, COLOR_GREEN, "Giỏi (≥8)", 9)
-        self._create_legend_item(legend_frame, COLOR_YELLOW, "Trung bình (5-7.9)", 9)
+        self._create_legend_item(legend_frame, COLOR_BLUE, "Khá (6.5-7.9)", 9)
+        self._create_legend_item(legend_frame, COLOR_YELLOW, "Trung bình (5-6.4)", 9)
         self._create_legend_item(legend_frame, COLOR_RED, "Yếu (<5)", 9)
         
         # Close button
