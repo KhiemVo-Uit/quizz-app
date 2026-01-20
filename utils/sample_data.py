@@ -223,10 +223,34 @@ def create_sample_questions_and_quizzes():
             # Skip if question already exists
             pass
     
-    # Không tạo quiz trước - quiz sẽ được tạo động mỗi khi bắt đầu làm bài
-    # Điều này đảm bảo mỗi lần thi sẽ có bộ câu hỏi ngẫu nhiên khác nhau
+    # Tạo các bài thi mẫu
+    sample_quizzes = [
+        {
+            'title': 'Kỹ thuật lập trình Python',
+            'description': 'Bài thi tổng hợp kiến thức Python từ cơ bản đến nâng cao',
+            'time_limit': 1800,  # 30 phút
+            'total_questions': 30,
+            'difficulty_matrix': {'easy': 10, 'medium': 10, 'hard': 10}
+        }
+    ]
+    
+    quizzes_created = 0
+    for quiz_data in sample_quizzes:
+        try:
+            quiz_id = QuizController.create_quiz_with_random_questions(
+                title=quiz_data['title'],
+                description=quiz_data['description'],
+                total_questions=quiz_data['total_questions'],
+                time_limit=quiz_data['time_limit'],
+                difficulty_matrix=quiz_data['difficulty_matrix']
+            )
+            if quiz_id:
+                quizzes_created += 1
+        except Exception:
+            # Skip if quiz already exists
+            pass
     
     return {
         'questions_count': len(sample_questions),
-        'quizzes_count': 0  # Quiz được tạo động khi làm bài
+        'quizzes_count': quizzes_created
     }
