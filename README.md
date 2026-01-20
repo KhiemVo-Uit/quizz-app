@@ -2,6 +2,55 @@
 
 Ứng dụng thi trắc nghiệm với giao diện đồ họa và cơ sở dữ liệu SQLite.
 
+## 🚀 Hướng dẫn chạy ứng dụng
+
+### Cách 1: Sử dụng script tự động (Khuyến nghị)
+
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+Script sẽ tự động:
+- Kiểm tra Python 3
+- Tạo virtual environment (nếu chưa có)
+- Cài đặt dependencies
+- Chạy ứng dụng
+
+### Cách 2: Chạy thủ công
+
+#### Bước 1: Cài đặt dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+#### Bước 2: Chạy ứng dụng
+
+```bash
+python main.py
+```
+
+Hoặc với Python 3:
+
+```bash
+python3 main.py
+```
+
+### Chạy tests
+
+```bash
+pytest tests/test_quiz_app.py -v
+```
+
+Hoặc:
+
+```bash
+python tests/test_quiz_app.py
+```
+
+---
+
 ## Đặc điểm nổi bật
 
 ### 1. Chức năng
@@ -77,32 +126,6 @@
 └── tests/                      # Testing
     ├── __init__.py
     └── test_quiz_app.py       # 15 unit tests
-```
-
-## Cài đặt và chạy
-
-### 1. Cài đặt dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Chạy ứng dụng
-
-```bash
-python main.py
-```
-
-### 3. Chạy tests
-
-```bash
-pytest tests/test_quiz_app.py -v
-```
-
-Hoặc:
-
-```bash
-python tests/test_quiz_app.py
 ```
 
 ## Hướng dẫn sử dụng
