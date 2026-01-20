@@ -210,29 +210,3 @@ class QuizController:
 
         return cursor.fetchall()
 
-    @staticmethod
-    def get_quiz_statistics(quiz_id):
-        """Get comprehensive statistics for a quiz"""
-        stats = Attempt.get_statistics(quiz_id)
-        
-        # Get question difficulty breakdown from actual attempts
-        conn = Attempt.get_by_id.__globals__['db'].get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT 
-                q.difficulty,
-                COUNT(DISTINCT aa.question_id) as count
-            FROM attempt_answers aa
-            INNER JOIN questions q ON aa.question_id = q.id
-            INNER JOIN attempts a ON aa.attempt_id = a.id
-            WHERE a.quiz_id = ?
-            GROUP BY q.difficulty
-        ''', (quiz_id,))
-        
-        difficulty_breakdown = cursor.fetchall()
-        
-        return {
-            'basic_stats': stats,
-            'difficulty_breakdown': difficulty_breakdown
-        }
