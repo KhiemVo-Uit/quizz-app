@@ -189,7 +189,7 @@ class QuizView:
             except Exception as e:
                 messagebox.showerror("Lỗi", f"Không thể tạo bài thi: {str(e)}")
         
-        ttk.Button(container, text="🚀 Bắt đầu làm bài",
+        ttk.Button(container, text="🚀 Bắt đầu",
                   command=submit_name,
                   bootstyle="success",
                   width=20).pack(pady=15)
