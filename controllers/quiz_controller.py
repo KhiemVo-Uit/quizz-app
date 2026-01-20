@@ -36,20 +36,24 @@ class QuizController:
         return quiz_id
 
     @staticmethod
-    def get_quiz_with_questions(quiz_id, difficulty_matrix={'easy': 10, 'medium': 10, 'hard': 10}):
+    def get_quiz_with_questions(quiz_id, difficulty_matrix=None):
         """Get quiz with randomly selected questions each time"""
         quiz = Quiz.get_by_id(quiz_id)
         if not quiz:
             return None
 
-        # Select random questions based on difficulty_matrix
+        # Select random questions based on difficulty_matrix or total_questions
         selected_questions = []
         
-        for difficulty_name, count in difficulty_matrix.items():
-            if count > 0:
-                difficulty_level = {'easy': 1, 'medium': 2, 'hard': 3}.get(difficulty_name, 1)
-                questions = Question.get_random_questions(count, difficulty_level)
-                selected_questions.extend(questions)
+        if difficulty_matrix:
+            for difficulty_name, count in difficulty_matrix.items():
+                if count > 0:
+                    difficulty_level = {'easy': 1, 'medium': 2, 'hard': 3}.get(difficulty_name, 1)
+                    questions = Question.get_random_questions(count, difficulty_level)
+                    selected_questions.extend(questions)
+        else:
+            # Use quiz's total_questions without filtering by difficulty
+            selected_questions = Question.get_random_questions(quiz.total_questions)
         
         # Shuffle questions to randomize order
         random.shuffle(selected_questions)
