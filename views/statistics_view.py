@@ -5,7 +5,11 @@ from ttkbootstrap.constants import *
 from controllers.quiz_controller import QuizController
 from models.quiz import Quiz
 from models.attempt import Attempt
-from config import FONT_FAMILY
+from config import (
+    FONT_FAMILY, COLOR_GREEN, COLOR_YELLOW, COLOR_RED,
+    COLOR_ROW_HIGH_BG, COLOR_ROW_HIGH_FG, COLOR_ROW_MEDIUM_BG, COLOR_ROW_MEDIUM_FG,
+    COLOR_ROW_LOW_BG, COLOR_ROW_LOW_FG, COLOR_ROW_ODD, COLOR_ROW_EVEN
+)
 
 
 class StatisticsView:
@@ -47,6 +51,13 @@ class StatisticsView:
         empty_frame.pack(expand=True)
         ttk.Label(empty_frame, text=icon, font=(FONT_FAMILY, 48)).pack(pady=20)
         ttk.Label(empty_frame, text=message, font=(FONT_FAMILY, 15)).pack(pady=10)
+
+    def _create_legend_item(self, parent, color, text, font_size=11):
+        """Helper: Create a colored legend item (DRY)"""
+        frame = ttk.Frame(parent)
+        frame.pack(side=tk.LEFT, padx=5)
+        ttk.Label(frame, text="●", font=(FONT_FAMILY, font_size + 2), foreground=color).pack(side=tk.LEFT)
+        ttk.Label(frame, text=f" {text}   ", font=(FONT_FAMILY, font_size)).pack(side=tk.LEFT)
 
     def show_statistics(self):
         """Show statistics overview"""
@@ -224,11 +235,11 @@ class StatisticsView:
         tree.column('date', width=300, anchor=tk.W)
         
         # Configure tags for colors
-        tree.tag_configure('high', background='#d4edda', foreground='#155724')
-        tree.tag_configure('medium', background='#fff3cd', foreground='#856404')
-        tree.tag_configure('low', background='#f8d7da', foreground='#721c24')
-        tree.tag_configure('oddrow', background='#f8f9fa')
-        tree.tag_configure('evenrow', background='#ffffff')
+        tree.tag_configure('high', background=COLOR_ROW_HIGH_BG, foreground=COLOR_ROW_HIGH_FG)
+        tree.tag_configure('medium', background=COLOR_ROW_MEDIUM_BG, foreground=COLOR_ROW_MEDIUM_FG)
+        tree.tag_configure('low', background=COLOR_ROW_LOW_BG, foreground=COLOR_ROW_LOW_FG)
+        tree.tag_configure('oddrow', background=COLOR_ROW_ODD)
+        tree.tag_configure('evenrow', background=COLOR_ROW_EVEN)
         
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
@@ -282,12 +293,9 @@ class StatisticsView:
         legend_frame = ttk.Frame(footer)
         legend_frame.pack(fill=tk.X, pady=5)
         
-        ttk.Label(legend_frame, text="🟢 Giỏi (≥8)   ",
-                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
-        ttk.Label(legend_frame, text="🟡 Trung bình (5-7.9)   ",
-                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
-        ttk.Label(legend_frame, text="🔴 Yếu (<5)",
-                 font=(FONT_FAMILY, 9)).pack(side=tk.LEFT, padx=5)
+        self._create_legend_item(legend_frame, COLOR_GREEN, "Giỏi (≥8)", 9)
+        self._create_legend_item(legend_frame, COLOR_YELLOW, "Trung bình (5-7.9)", 9)
+        self._create_legend_item(legend_frame, COLOR_RED, "Yếu (<5)", 9)
         
         # Close button
         ttk.Button(footer, text="✖ Đóng",
@@ -402,11 +410,11 @@ class StatisticsView:
         tree.column('question', width=600, anchor=tk.W)
         
         # Configure tags for colors
-        tree.tag_configure('easy', background='#d4edda')
-        tree.tag_configure('medium', background='#fff3cd')
-        tree.tag_configure('hard', background='#f8d7da')
-        tree.tag_configure('oddrow', background='#f8f9fa')
-        tree.tag_configure('evenrow', background='#ffffff')
+        tree.tag_configure('easy', background=COLOR_ROW_HIGH_BG)
+        tree.tag_configure('medium', background=COLOR_ROW_MEDIUM_BG)
+        tree.tag_configure('hard', background=COLOR_ROW_LOW_BG)
+        tree.tag_configure('oddrow', background=COLOR_ROW_ODD)
+        tree.tag_configure('evenrow', background=COLOR_ROW_EVEN)
         
         difficulty_names = {1: 'Dễ', 2: 'Trung bình', 3: 'Khó'}
         
@@ -463,12 +471,9 @@ class StatisticsView:
         colors_frame = ttk.Frame(legend_items)
         colors_frame.pack(side=tk.LEFT, padx=10)
         
-        ttk.Label(colors_frame, text="🟢 Dễ   ", 
-                 font=(FONT_FAMILY, 11)).pack(side=tk.LEFT, padx=5)
-        ttk.Label(colors_frame, text="🟡 Trung bình   ", 
-                 font=(FONT_FAMILY, 11)).pack(side=tk.LEFT, padx=5)
-        ttk.Label(colors_frame, text="🔴 Khó", 
-                 font=(FONT_FAMILY, 11)).pack(side=tk.LEFT, padx=5)
+        self._create_legend_item(colors_frame, COLOR_GREEN, "Dễ", 11)
+        self._create_legend_item(colors_frame, COLOR_YELLOW, "Trung bình", 11)
+        self._create_legend_item(colors_frame, COLOR_RED, "Khó", 11)
         
         # Note
         note_label = ttk.Label(legend, 

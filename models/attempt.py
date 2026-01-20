@@ -27,27 +27,30 @@ class Attempt:
         Attempt.cleanup_abandoned_attempts()
         cursor.execute('''
             INSERT INTO attempts (quiz_id, student_name, total_questions)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
         ''', (quiz_id, student_name, total_questions))
 
         conn.commit()
-        return cursor.lastrowid
+        attempt_id = cursor.lastrowid
+        db.close_connection(conn)
+        return attempt_id
 
     @staticmethod
     def get_by_id(attempt_id):
         """Get attempt by ID"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
-        cursor.execute('SELECT * FROM attempts WHERE id = ?', (attempt_id,))
+        cursor.execute('SELECT * FROM attempts WHERE id = %s', (attempt_id,))
         row = cursor.fetchone()
+        db.close_connection(conn)
 
         if row:
             return Attempt(
                 id=row['id'],
                 quiz_id=row['quiz_id'],
                 student_name=row['student_name'],
-                score=row['score'],
+                score=float(row['score']) if row['score'] else 0,
                 total_questions=row['total_questions'],
                 correct_answers=row['correct_answers'],
                 time_taken=row['time_taken'],
@@ -60,20 +63,21 @@ class Attempt:
     def get_by_quiz(quiz_id):
         """Get all attempts for a quiz"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute('''
             SELECT * FROM attempts 
-            WHERE quiz_id = ? 
+            WHERE quiz_id = %s 
             ORDER BY started_at DESC
         ''', (quiz_id,))
         rows = cursor.fetchall()
+        db.close_connection(conn)
 
         return [Attempt(
             id=row['id'],
             quiz_id=row['quiz_id'],
             student_name=row['student_name'],
-            score=row['score'],
+            score=float(row['score']) if row['score'] else 0,
             total_questions=row['total_questions'],
             correct_answers=row['correct_answers'],
             time_taken=row['time_taken'],
@@ -89,12 +93,14 @@ class Attempt:
 
         cursor.execute('''
             UPDATE attempts 
-            SET score = ?, correct_answers = ?, time_taken = ?, completed_at = ?
-            WHERE id = ?
+            SET score = %s, correct_answers = %s, time_taken = %s, completed_at = %s
+            WHERE id = %s
         ''', (score, correct_answers, time_taken, datetime.now(), attempt_id))
 
         conn.commit()
-        return cursor.rowcount > 0
+        result = cursor.rowcount > 0
+        db.close_connection(conn)
+        return result
 
     @staticmethod
     def save_answer(attempt_id, question_id, selected_option_id, is_correct):
@@ -104,34 +110,38 @@ class Attempt:
 
         cursor.execute('''
             INSERT INTO attempt_answers (attempt_id, question_id, selected_option_id, is_correct)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
         ''', (attempt_id, question_id, selected_option_id, is_correct))
 
         conn.commit()
-        return cursor.lastrowid
+        answer_id = cursor.lastrowid
+        db.close_connection(conn)
+        return answer_id
 
     @staticmethod
     def get_answers(attempt_id):
         """Get all answers for an attempt"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute('''
             SELECT aa.*, q.question_text, o.option_text as selected_text
             FROM attempt_answers aa
             INNER JOIN questions q ON aa.question_id = q.id
             LEFT JOIN options o ON aa.selected_option_id = o.id
-            WHERE aa.attempt_id = ?
+            WHERE aa.attempt_id = %s
             ORDER BY aa.answered_at
         ''', (attempt_id,))
 
-        return cursor.fetchall()
+        result = cursor.fetchall()
+        db.close_connection(conn)
+        return result
 
     @staticmethod
     def get_statistics(quiz_id):
         """Get statistics for a quiz"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute('''
             SELECT 
@@ -141,10 +151,12 @@ class Attempt:
                 MIN(score) as min_score,
                 AVG(time_taken) as avg_time
             FROM attempts
-            WHERE quiz_id = ? AND completed_at IS NOT NULL
+            WHERE quiz_id = %s AND completed_at IS NOT NULL
         ''', (quiz_id,))
 
-        return cursor.fetchone()
+        result = cursor.fetchone()
+        db.close_connection(conn)
+        return result
 
     @staticmethod
     def delete(attempt_id):
@@ -152,21 +164,25 @@ class Attempt:
         conn = db.get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('DELETE FROM attempts WHERE id = ?', (attempt_id,))
+        cursor.execute('DELETE FROM attempts WHERE id = %s', (attempt_id,))
         conn.commit()
-        return cursor.rowcount > 0
+        result = cursor.rowcount > 0
+        db.close_connection(conn)
+        return result
+
     @staticmethod
     def cleanup_abandoned_attempts(hours_threshold=24):
         """Delete abandoned attempts that were started but not completed within the threshold hours"""
         conn = db.get_connection()
         cursor = conn.cursor()
 
-        cursor.execute(f'''
+        cursor.execute('''
             DELETE FROM attempts 
             WHERE completed_at IS NULL 
-            AND started_at < datetime('now', '-{hours_threshold} hours')
-        ''')
+            AND started_at < DATE_SUB(NOW(), INTERVAL %s HOUR)
+        ''', (hours_threshold,))
         
         deleted_count = cursor.rowcount
         conn.commit()
+        db.close_connection(conn)
         return deleted_count

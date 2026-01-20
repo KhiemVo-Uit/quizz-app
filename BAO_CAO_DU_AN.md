@@ -66,7 +66,7 @@ Quiz App là ứng dụng desktop cho phép người dùng:
 
 ✅ **Cơ sở dữ liệu:**
 
-- Thiết kế schema chuẩn hóa (6 bảng)
+- Thiết kế schema chuẩn hóa (5 bảng)
 - Ràng buộc toàn vẹn dữ liệu (Foreign Keys, CHECK)
 - Indexes để tối ưu hiệu suất
 
@@ -216,7 +216,7 @@ quizz-app/
 **Chức năng:**
 
 - Khởi tạo kết nối SQLite
-- Tạo schema với 6 bảng
+- Tạo schema với 5 bảng
 - Thiết lập Foreign Keys, CHECK constraints
 - Tạo indexes cho hiệu suất
 
@@ -403,14 +403,14 @@ CREATE INDEX idx_questions_text ON questions(question_text);
 
 **Class QuizApp** - điều phối toàn bộ ứng dụng:
 
-| Phương thức | Chức năng |
-|-------------|-----------|
-| `__init__()` | Khởi tạo DB, tạo sidebar, hiển thị home |
-| `create_sidebar()` | Tạo 5 buttons navigation (Home, Quiz, Question Bank, Statistics, Exit) |
-| `clear_content()` | Xóa view hiện tại trước khi chuyển view mới |
-| `show_home/quiz/question_bank/statistics()` | Chuyển đổi giữa các views |
-| `check_and_create_sample_data()` | Tự động tạo 100 câu hỏi mẫu nếu DB trống |
-| `quit_app()` | Hiển thị dialog xác nhận trước khi thoát |
+| Phương thức                                 | Chức năng                                                              |
+| ------------------------------------------- | ---------------------------------------------------------------------- |
+| `__init__()`                                | Khởi tạo DB, tạo sidebar, hiển thị home                                |
+| `create_sidebar()`                          | Tạo 5 buttons navigation (Home, Quiz, Question Bank, Statistics, Exit) |
+| `clear_content()`                           | Xóa view hiện tại trước khi chuyển view mới                            |
+| `show_home/quiz/question_bank/statistics()` | Chuyển đổi giữa các views                                              |
+| `check_and_create_sample_data()`            | Tự động tạo 100 câu hỏi mẫu nếu DB trống                               |
+| `quit_app()`                                | Hiển thị dialog xác nhận trước khi thoát                               |
 
 **Luồng khởi động:**
 
@@ -520,14 +520,13 @@ CREATE INDEX idx_questions_text ON questions(question_text);
 
 ### 6.1. Schema tổng quan
 
-**6 bảng chính:**
+**5 bảng chính:**
 
 1. **questions** (Câu hỏi)
 2. **options** (Đáp án)
 3. **quizzes** (Bài thi)
-4. **quiz_questions** (Mapping quiz-question) - _Không dùng, quiz động_
-5. **attempts** (Lượt thi)
-6. **attempt_answers** (Câu trả lời)
+4. **attempts** (Lượt thi)
+5. **attempt_answers** (Câu trả lời)
 
 ### 6.2. Chi tiết từng bảng
 
@@ -659,8 +658,6 @@ questions (1) ──< (N) options
     │
     ├──< attempt_answers (N) >── (1) attempts
     │
-    └──< quiz_questions (unused)
-
 quizzes (1) ──< (N) attempts
 ```
 
@@ -838,7 +835,7 @@ def setup_database():
 
 # 4 Test Classes tổ chức theo module
 class TestQuestionModel:     # 6 tests
-class TestOptionModel:       # 3 tests  
+class TestOptionModel:       # 3 tests
 class TestQuizController:    # 6 tests
 class TestQuestionBankController:  # 3 tests
 ```
@@ -851,12 +848,12 @@ class TestQuestionBankController:  # 3 tests
 
 **Tổ chức Test Classes:**
 
-| Class | Module được test | Số tests |
-|-------|------------------|----------|
-| `TestQuestionModel` | `models/question.py` | 6 |
-| `TestOptionModel` | `models/option.py` | 3 |
-| `TestQuizController` | `controllers/quiz_controller.py` | 6 |
-| `TestQuestionBankController` | `controllers/question_bank_controller.py` | 3 |
+| Class                        | Module được test                          | Số tests |
+| ---------------------------- | ----------------------------------------- | -------- |
+| `TestQuestionModel`          | `models/question.py`                      | 6        |
+| `TestOptionModel`            | `models/option.py`                        | 3        |
+| `TestQuizController`         | `controllers/quiz_controller.py`          | 6        |
+| `TestQuestionBankController` | `controllers/question_bank_controller.py` | 3        |
 
 ### 8.2. Danh sách tests
 
@@ -951,18 +948,18 @@ def test_random_question_selection(self, setup_database):
     # Tạo 10 câu hỏi
     for i in range(10):
         Question.create(f"Question {i}", 1, "Test")
-    
+
     # Lấy random 5 câu
     random_questions = Question.get_random_questions(5)
     assert len(random_questions) == 5
-    
+
     # Kiểm tra tính ngẫu nhiên (chạy nhiều lần)
     selections = []
     for _ in range(3):
         questions = Question.get_random_questions(3)
         question_ids = [q.id for q in questions]
         selections.append(tuple(question_ids))
-    
+
     assert len(set(selections)) >= 1  # Có kết quả
 ```
 
@@ -978,17 +975,17 @@ def test_scoring_calculation(self, setup_database):
         Option.create(q_id, "Correct", True)
         Option.create(q_id, "Wrong", False)
         questions.append(q_id)
-    
+
     quiz_id = Quiz.create("Test", "Desc", 300, 3)
     attempt_id = QuizController.start_attempt(quiz_id, "Student")
-    
+
     # Trả lời 2 đúng, 1 sai
     QuizController.submit_answer(attempt_id, questions[0], correct_opt.id)
     QuizController.submit_answer(attempt_id, questions[1], correct_opt.id)
     QuizController.submit_answer(attempt_id, questions[2], wrong_opt.id)
-    
+
     result = QuizController.complete_attempt(attempt_id, 120)
-    
+
     assert result['correct'] == 2
     assert result['total'] == 3
     assert result['score'] == 20  # 2 * 10 points
@@ -1005,7 +1002,7 @@ def test_validate_one_correct_answer(self, setup_database):
             "Test", 1, "Test",
             [("A", False), ("B", False)]
         )
-    
+
     # Có 2 đáp án đúng → ValueError
     with pytest.raises(ValueError):
         QuestionBankController.add_question_with_options(
@@ -1134,7 +1131,7 @@ python main.py
 
 - 6 bảng với schema chuẩn hóa
 - Ràng buộc toàn vẹn đầy đủ (FK, CHECK, UNIQUE)
-- Indexes tối ưu cho search/filter
+- 5ndexes tối ưu cho search/filter
 
 ✅ **Tìm kiếm & Phân tích:**
 
@@ -1188,7 +1185,7 @@ python main.py
 - **Lines of code:** ~3000 LOC (không tính tests)
 - **Files:** 15 files Python
 - **Functions/Methods:** ~100+
-- **Database tables:** 6 bảng
+- **Database tables:** 5 bảng
 - **Sample questions:** 100 câu Python
 - **Tests:** 18 unit tests
 
@@ -1415,23 +1412,27 @@ ttkbootstrap>=1.10.1
 ### D. Tóm tắt README.md
 
 **Cài đặt:**
+
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
 
 **Chạy tests:**
+
 ```bash
 pytest tests/test_quiz_app.py -v
 ```
 
 **Hướng dẫn sử dụng nhanh:**
+
 1. Chạy app → tự động tạo 100 câu hỏi mẫu
 2. "Làm bài thi" → chọn quiz, nhập tên, làm bài
 3. "Ngân hàng câu hỏi" → thêm/sửa/xóa câu hỏi
 4. "Thống kê" → xem phân tích kết quả
 
 **Tính năng đặc biệt:**
+
 - Random câu hỏi theo ma trận độ khó: `{'easy': 5, 'medium': 3, 'hard': 2}`
 - Timer cảnh báo: xanh (>5 phút) → cam (1-5 phút) → đỏ (<1 phút)
 - Auto-submit khi hết giờ

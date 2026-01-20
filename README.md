@@ -15,7 +15,7 @@
 
 ### 2. Cơ sở dữ liệu
 
-- ✅ 6 bảng: `questions`, `options`, `quizzes`, `quiz_questions`, `attempts`, `attempt_answers`
+- ✅ 5 bảng: `questions`, `options`, `quizzes`, `attempts`, `attempt_answers`
 - ✅ Ràng buộc toàn vẹn (Foreign Keys, Cascades)
 - ✅ Ràng buộc logic (CHECK constraints)
 - ✅ Indexes để tối ưu hiệu suất
@@ -161,14 +161,6 @@ python tests/test_quiz_app.py
 - time_limit (seconds, CHECK > 0)
 - total_questions (CHECK > 0)
 - created_at
-
-### quiz_questions
-
-- id (PK)
-- quiz_id (FK -> quizzes)
-- question_id (FK -> questions)
-- question_order
-- UNIQUE: (quiz_id, question_id)
 
 ### attempts
 

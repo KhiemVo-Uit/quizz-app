@@ -34,7 +34,7 @@
 ```
 database/
 ├── __init__.py
-└── connection.py          # Database schema, 6 tables, indexes
+└── connection.py          # Database schema, 5 tables, indexes
 
 models/
 ├── __init__.py
@@ -48,7 +48,7 @@ models/
 
 1. **Thiết kế Database Schema**
 
-   - 6 bảng: questions, options, quizzes, quiz_questions, attempts, attempt_answers
+   - 5 bảng: questions, options, quizzes, attempts, attempt_answers
    - Ràng buộc toàn vẹn: CHECK, UNIQUE, NOT NULL
    - Foreign keys với CASCADE
    - Indexes cho performance
@@ -626,7 +626,7 @@ Day 22-28:
 ### ☑️ Thành viên A - Data Layer
 
 - [ ] ERD diagram hoàn chỉnh
-- [ ] Database schema với 6 bảng
+- [ ] Database schema với 5 bảng
 - [ ] Question model (10+ methods)
 - [ ] Option model (6+ methods)
 - [ ] Quiz model (8+ methods)

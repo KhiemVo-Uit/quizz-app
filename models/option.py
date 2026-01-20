@@ -20,20 +20,23 @@ class Option:
 
         cursor.execute('''
             INSERT INTO options (question_id, option_text, is_correct)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
         ''', (question_id, option_text, is_correct))
 
         conn.commit()
-        return cursor.lastrowid
+        option_id = cursor.lastrowid
+        db.close_connection(conn)
+        return option_id
 
     @staticmethod
     def get_by_id(option_id):
         """Get option by ID"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
-        cursor.execute('SELECT * FROM options WHERE id = ?', (option_id,))
+        cursor.execute('SELECT * FROM options WHERE id = %s', (option_id,))
         row = cursor.fetchone()
+        db.close_connection(conn)
 
         if row:
             return Option(
@@ -49,10 +52,11 @@ class Option:
     def get_by_question(question_id):
         """Get all options for a question"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
-        cursor.execute('SELECT * FROM options WHERE question_id = ? ORDER BY id', (question_id,))
+        cursor.execute('SELECT * FROM options WHERE question_id = %s ORDER BY id', (question_id,))
         rows = cursor.fetchall()
+        db.close_connection(conn)
 
         return [Option(
             id=row['id'],
@@ -66,13 +70,14 @@ class Option:
     def get_correct_option(question_id):
         """Get the correct option for a question"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute('''
             SELECT * FROM options 
-            WHERE question_id = ? AND is_correct = 1
+            WHERE question_id = %s AND is_correct = 1
         ''', (question_id,))
         row = cursor.fetchone()
+        db.close_connection(conn)
 
         if row:
             return Option(
@@ -94,18 +99,21 @@ class Option:
         params = []
 
         if option_text is not None:
-            updates.append('option_text = ?')
+            updates.append('option_text = %s')
             params.append(option_text)
         if is_correct is not None:
-            updates.append('is_correct = ?')
+            updates.append('is_correct = %s')
             params.append(is_correct)
 
         if updates:
             params.append(option_id)
-            query = f"UPDATE options SET {', '.join(updates)} WHERE id = ?"
+            query = f"UPDATE options SET {', '.join(updates)} WHERE id = %s"
             cursor.execute(query, params)
             conn.commit()
-            return cursor.rowcount > 0
+            result = cursor.rowcount > 0
+            db.close_connection(conn)
+            return result
+        db.close_connection(conn)
         return False
 
     @staticmethod
@@ -114,9 +122,11 @@ class Option:
         conn = db.get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('DELETE FROM options WHERE id = ?', (option_id,))
+        cursor.execute('DELETE FROM options WHERE id = %s', (option_id,))
         conn.commit()
-        return cursor.rowcount > 0
+        result = cursor.rowcount > 0
+        db.close_connection(conn)
+        return result
 
     @staticmethod
     def delete_by_question(question_id):
@@ -124,6 +134,8 @@ class Option:
         conn = db.get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('DELETE FROM options WHERE question_id = ?', (question_id,))
+        cursor.execute('DELETE FROM options WHERE question_id = %s', (question_id,))
         conn.commit()
-        return cursor.rowcount > 0
+        result = cursor.rowcount > 0
+        db.close_connection(conn)
+        return result

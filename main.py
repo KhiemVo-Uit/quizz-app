@@ -244,8 +244,7 @@ class QuizApp:
     def quit_app(self):
         """Quit application"""
         if messagebox.askyesno("Xác nhận", "Bạn có chắc muốn thoát?"):
-            db.close_connection()
-            self.root.quit()
+            self.root.destroy()
 
 
 def main():

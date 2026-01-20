@@ -20,20 +20,23 @@ class Question:
 
         cursor.execute('''
             INSERT INTO questions (question_text, difficulty, category)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
         ''', (question_text, difficulty, category))
 
         conn.commit()
-        return cursor.lastrowid
+        question_id = cursor.lastrowid
+        db.close_connection(conn)
+        return question_id
 
     @staticmethod
     def get_by_id(question_id):
         """Get question by ID"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
-        cursor.execute('SELECT * FROM questions WHERE id = ?', (question_id,))
+        cursor.execute('SELECT * FROM questions WHERE id = %s', (question_id,))
         row = cursor.fetchone()
+        db.close_connection(conn)
 
         if row:
             return Question(
@@ -49,10 +52,11 @@ class Question:
     def get_all():
         """Get all questions"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute('SELECT * FROM questions ORDER BY id ASC')
         rows = cursor.fetchall()
+        db.close_connection(conn)
 
         return [Question(
             id=row['id'],
@@ -66,10 +70,11 @@ class Question:
     def get_by_difficulty(difficulty):
         """Get questions by difficulty level"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
-        cursor.execute('SELECT * FROM questions WHERE difficulty = ?', (difficulty,))
+        cursor.execute('SELECT * FROM questions WHERE difficulty = %s', (difficulty,))
         rows = cursor.fetchall()
+        db.close_connection(conn)
 
         return [Question(
             id=row['id'],
@@ -83,10 +88,11 @@ class Question:
     def get_by_category(category):
         """Get questions by category"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
-        cursor.execute('SELECT * FROM questions WHERE category = ?', (category,))
+        cursor.execute('SELECT * FROM questions WHERE category = %s', (category,))
         rows = cursor.fetchall()
+        db.close_connection(conn)
 
         return [Question(
             id=row['id'],
@@ -106,21 +112,24 @@ class Question:
         params = []
 
         if question_text is not None:
-            updates.append('question_text = ?')
+            updates.append('question_text = %s')
             params.append(question_text)
         if difficulty is not None:
-            updates.append('difficulty = ?')
+            updates.append('difficulty = %s')
             params.append(difficulty)
         if category is not None:
-            updates.append('category = ?')
+            updates.append('category = %s')
             params.append(category)
 
         if updates:
             params.append(question_id)
-            query = f"UPDATE questions SET {', '.join(updates)} WHERE id = ?"
+            query = f"UPDATE questions SET {', '.join(updates)} WHERE id = %s"
             cursor.execute(query, params)
             conn.commit()
-            return cursor.rowcount > 0
+            result = cursor.rowcount > 0
+            db.close_connection(conn)
+            return result
+        db.close_connection(conn)
         return False
 
     @staticmethod
@@ -129,40 +138,45 @@ class Question:
         conn = db.get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('DELETE FROM questions WHERE id = ?', (question_id,))
+        cursor.execute('DELETE FROM questions WHERE id = %s', (question_id,))
         conn.commit()
-        return cursor.rowcount > 0
+        result = cursor.rowcount > 0
+        db.close_connection(conn)
+        return result
 
     @staticmethod
     def count():
         """Count total questions"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute('SELECT COUNT(*) as count FROM questions')
-        return cursor.fetchone()['count']
+        result = cursor.fetchone()['count']
+        db.close_connection(conn)
+        return result
 
     @staticmethod
     def get_random_questions(count, difficulty=None):
         """Get random questions, optionally filtered by difficulty"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         if difficulty:
             cursor.execute('''
                 SELECT * FROM questions 
-                WHERE difficulty = ?
-                ORDER BY RANDOM() 
-                LIMIT ?
+                WHERE difficulty = %s
+                ORDER BY RAND() 
+                LIMIT %s
             ''', (difficulty, count))
         else:
             cursor.execute('''
                 SELECT * FROM questions 
-                ORDER BY RANDOM() 
-                LIMIT ?
+                ORDER BY RAND() 
+                LIMIT %s
             ''', (count,))
 
         rows = cursor.fetchall()
+        db.close_connection(conn)
 
         return [Question(
             id=row['id'],
@@ -171,17 +185,18 @@ class Question:
             category=row['category'],
             created_at=row['created_at']
         ) for row in rows]
+
     @staticmethod
     def get_statistics(question_id):
         """Get statistics for a specific question (moved from Controller)"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         # 1. Total times answered
         cursor.execute('''
             SELECT COUNT(*) as total_answers
             FROM attempt_answers
-            WHERE question_id = ?
+            WHERE question_id = %s
         ''', (question_id,))
         total_answers = cursor.fetchone()['total_answers']
 
@@ -189,7 +204,7 @@ class Question:
         cursor.execute('''
             SELECT COUNT(*) as correct_count
             FROM attempt_answers
-            WHERE question_id = ? AND is_correct = 1
+            WHERE question_id = %s AND is_correct = 1
         ''', (question_id,))
         correct_count = cursor.fetchone()['correct_count']
 
@@ -202,10 +217,11 @@ class Question:
                 COUNT(aa.id) as selection_count
             FROM options o
             LEFT JOIN attempt_answers aa ON o.id = aa.selected_option_id
-            WHERE o.question_id = ?
-            GROUP BY o.id
+            WHERE o.question_id = %s
+            GROUP BY o.id, o.option_text, o.is_correct
         ''', (question_id,))
         option_stats = cursor.fetchall()
+        db.close_connection(conn)
 
         # Trả về dictionary dữ liệu đã xử lý
         return {
@@ -219,7 +235,7 @@ class Question:
     def analyze_difficulty():
         """Analyze actual difficulty based on answer statistics (moved from Controller)"""
         conn = db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         cursor.execute('''
             SELECT 
@@ -228,13 +244,15 @@ class Question:
                 q.difficulty as labeled_difficulty,
                 COUNT(aa.id) as total_answers,
                 SUM(CASE WHEN aa.is_correct = 1 THEN 1 ELSE 0 END) as correct_answers,
-                CAST(SUM(CASE WHEN aa.is_correct = 1 THEN 1 ELSE 0 END) AS FLOAT) / 
+                CAST(SUM(CASE WHEN aa.is_correct = 1 THEN 1 ELSE 0 END) AS DECIMAL(10,2)) / 
                     COUNT(aa.id) * 100 as success_rate
             FROM questions q
             LEFT JOIN attempt_answers aa ON q.id = aa.question_id
-            GROUP BY q.id
+            GROUP BY q.id, q.question_text, q.difficulty
             HAVING COUNT(aa.id) > 0
             ORDER BY success_rate ASC
         ''')
 
-        return cursor.fetchall()
+        result = cursor.fetchall()
+        db.close_connection(conn)
+        return result
