@@ -1,9 +1,10 @@
 """Quiz model"""
 from mysql.connector import Error as MySQLError
+from models.base_model import BaseModel
 from database.connection import db
 
 
-class Quiz:
+class Quiz(BaseModel):
     """Quiz model"""
 
     def __init__(self, id=None, title='', description='', time_limit=600, 
@@ -15,17 +16,37 @@ class Quiz:
         self.total_questions = total_questions
         self.created_at = created_at
 
+    @classmethod
+    def _from_row(cls, row):
+        """Create Quiz instance from database row"""
+        if not row:
+            return None
+        return cls(
+            id=row['id'],
+            title=row['title'],
+            description=row['description'],
+            time_limit=row['time_limit'],
+            total_questions=row['total_questions'],
+            created_at=row['created_at']
+        )
+
+    @classmethod
+    def _from_rows(cls, rows):
+        """Create list of Quiz instances from database rows"""
+        return [cls._from_row(row) for row in rows]
+
     @staticmethod
     def create(title, description='', time_limit=600, total_questions=10):
         """Create a new quiz (returns existing quiz_id if title already exists)"""
+        # Need special handling for duplicate title check
         conn = db.get_connection()
         cursor = conn.cursor(dictionary=True)
 
         try:
-            cursor.execute('''
-                INSERT INTO quizzes (title, description, time_limit, total_questions)
-                VALUES (%s, %s, %s, %s)
-            ''', (title, description, time_limit, total_questions))
+            cursor.execute(
+                'INSERT INTO quizzes (title, description, time_limit, total_questions) VALUES (%s, %s, %s, %s)',
+                (title, description, time_limit, total_questions)
+            )
             conn.commit()
             quiz_id = cursor.lastrowid
             db.close_connection(conn)
@@ -37,122 +58,56 @@ class Quiz:
             db.close_connection(conn)
             return row['id'] if row else None
 
-    @staticmethod
-    def get_by_id(quiz_id):
+    @classmethod
+    def get_by_id(cls, quiz_id):
         """Get quiz by ID"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
+        row = BaseModel.execute_query_one(
+            'SELECT * FROM quizzes WHERE id = %s',
+            (quiz_id,)
+        )
+        return cls._from_row(row)
 
-        cursor.execute('SELECT * FROM quizzes WHERE id = %s', (quiz_id,))
-        row = cursor.fetchone()
-        db.close_connection(conn)
-
-        if row:
-            return Quiz(
-                id=row['id'],
-                title=row['title'],
-                description=row['description'],
-                time_limit=row['time_limit'],
-                total_questions=row['total_questions'],
-                created_at=row['created_at']
-            )
-        return None
-
-    @staticmethod
-    def get_by_title(title):
+    @classmethod
+    def get_by_title(cls, title):
         """Get quiz by title"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
+        row = BaseModel.execute_query_one(
+            'SELECT * FROM quizzes WHERE title = %s',
+            (title,)
+        )
+        return cls._from_row(row)
 
-        cursor.execute('SELECT * FROM quizzes WHERE title = %s', (title,))
-        row = cursor.fetchone()
-        db.close_connection(conn)
-
-        if row:
-            return Quiz(
-                id=row['id'],
-                title=row['title'],
-                description=row['description'],
-                time_limit=row['time_limit'],
-                total_questions=row['total_questions'],
-                created_at=row['created_at']
-            )
-        return None
-
-    @staticmethod
-    def get_all():
+    @classmethod
+    def get_all(cls):
         """Get all quizzes"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute('SELECT * FROM quizzes ORDER BY created_at DESC')
-        rows = cursor.fetchall()
-        db.close_connection(conn)
-
-        return [Quiz(
-            id=row['id'],
-            title=row['title'],
-            description=row['description'],
-            time_limit=row['time_limit'],
-            total_questions=row['total_questions'],
-            created_at=row['created_at']
-        ) for row in rows]
+        rows = BaseModel.execute_query('SELECT * FROM quizzes ORDER BY created_at DESC')
+        return cls._from_rows(rows)
 
     @staticmethod
     def update(quiz_id, title=None, description=None, time_limit=None, total_questions=None):
         """Update quiz"""
-        conn = db.get_connection()
-        cursor = conn.cursor()
-
-        updates = []
-        params = []
-
-        if title is not None:
-            updates.append('title = %s')
-            params.append(title)
-        if description is not None:
-            updates.append('description = %s')
-            params.append(description)
-        if time_limit is not None:
-            updates.append('time_limit = %s')
-            params.append(time_limit)
-        if total_questions is not None:
-            updates.append('total_questions = %s')
-            params.append(total_questions)
-
-        if updates:
+        query, params = BaseModel.build_update_query(
+            'quizzes',
+            {
+                'title': title,
+                'description': description,
+                'time_limit': time_limit,
+                'total_questions': total_questions
+            }
+        )
+        if query:
             params.append(quiz_id)
-            query = f"UPDATE quizzes SET {', '.join(updates)} WHERE id = %s"
-            cursor.execute(query, params)
-            conn.commit()
-            result = cursor.rowcount > 0
-            db.close_connection(conn)
-            return result
-        db.close_connection(conn)
+            return BaseModel.execute_update(query, params)
         return False
 
     @staticmethod
     def delete(quiz_id):
         """Delete quiz"""
-        conn = db.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('DELETE FROM quizzes WHERE id = %s', (quiz_id,))
-        conn.commit()
-        result = cursor.rowcount > 0
-        db.close_connection(conn)
-        return result
-
-    # Quiz questions are now generated randomly at attempt time
-    # No need to store quiz-question mapping
+        return BaseModel.execute_update(
+            'DELETE FROM quizzes WHERE id = %s',
+            (quiz_id,)
+        )
 
     @staticmethod
     def count():
         """Count total quizzes"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute('SELECT COUNT(*) as count FROM quizzes')
-        result = cursor.fetchone()['count']
-        db.close_connection(conn)
-        return result
+        return BaseModel.execute_count('SELECT COUNT(*) as count FROM quizzes')

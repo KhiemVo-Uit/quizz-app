@@ -1,8 +1,8 @@
 """Question model"""
-from database.connection import db
+from models.base_model import BaseModel
 
 
-class Question:
+class Question(BaseModel):
     """Question model for quiz app"""
 
     def __init__(self, id=None, question_text='', difficulty=1, category='', created_at=None):
@@ -12,204 +12,122 @@ class Question:
         self.category = category
         self.created_at = created_at
 
+    @classmethod
+    def _from_row(cls, row):
+        """Create Question instance from database row"""
+        if not row:
+            return None
+        return cls(
+            id=row['id'],
+            question_text=row['question_text'],
+            difficulty=row['difficulty'],
+            category=row['category'],
+            created_at=row['created_at']
+        )
+
+    @classmethod
+    def _from_rows(cls, rows):
+        """Create list of Question instances from database rows"""
+        return [cls._from_row(row) for row in rows]
+
     @staticmethod
     def create(question_text, difficulty, category='General'):
         """Create a new question"""
-        conn = db.get_connection()
-        cursor = conn.cursor()
+        return BaseModel.execute_insert(
+            'INSERT INTO questions (question_text, difficulty, category) VALUES (%s, %s, %s)',
+            (question_text, difficulty, category)
+        )
 
-        cursor.execute('''
-            INSERT INTO questions (question_text, difficulty, category)
-            VALUES (%s, %s, %s)
-        ''', (question_text, difficulty, category))
-
-        conn.commit()
-        question_id = cursor.lastrowid
-        db.close_connection(conn)
-        return question_id
-
-    @staticmethod
-    def get_by_id(question_id):
+    @classmethod
+    def get_by_id(cls, question_id):
         """Get question by ID"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
+        row = BaseModel.execute_query_one(
+            'SELECT * FROM questions WHERE id = %s',
+            (question_id,)
+        )
+        return cls._from_row(row)
 
-        cursor.execute('SELECT * FROM questions WHERE id = %s', (question_id,))
-        row = cursor.fetchone()
-        db.close_connection(conn)
-
-        if row:
-            return Question(
-                id=row['id'],
-                question_text=row['question_text'],
-                difficulty=row['difficulty'],
-                category=row['category'],
-                created_at=row['created_at']
-            )
-        return None
-
-    @staticmethod
-    def get_all():
+    @classmethod
+    def get_all(cls):
         """Get all questions"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
+        rows = BaseModel.execute_query('SELECT * FROM questions ORDER BY id ASC')
+        return cls._from_rows(rows)
 
-        cursor.execute('SELECT * FROM questions ORDER BY id ASC')
-        rows = cursor.fetchall()
-        db.close_connection(conn)
-
-        return [Question(
-            id=row['id'],
-            question_text=row['question_text'],
-            difficulty=row['difficulty'],
-            category=row['category'],
-            created_at=row['created_at']
-        ) for row in rows]
-
-    @staticmethod
-    def get_by_difficulty(difficulty):
+    @classmethod
+    def get_by_difficulty(cls, difficulty):
         """Get questions by difficulty level"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
+        rows = BaseModel.execute_query(
+            'SELECT * FROM questions WHERE difficulty = %s',
+            (difficulty,)
+        )
+        return cls._from_rows(rows)
 
-        cursor.execute('SELECT * FROM questions WHERE difficulty = %s', (difficulty,))
-        rows = cursor.fetchall()
-        db.close_connection(conn)
-
-        return [Question(
-            id=row['id'],
-            question_text=row['question_text'],
-            difficulty=row['difficulty'],
-            category=row['category'],
-            created_at=row['created_at']
-        ) for row in rows]
-
-    @staticmethod
-    def get_by_category(category):
+    @classmethod
+    def get_by_category(cls, category):
         """Get questions by category"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute('SELECT * FROM questions WHERE category = %s', (category,))
-        rows = cursor.fetchall()
-        db.close_connection(conn)
-
-        return [Question(
-            id=row['id'],
-            question_text=row['question_text'],
-            difficulty=row['difficulty'],
-            category=row['category'],
-            created_at=row['created_at']
-        ) for row in rows]
+        rows = BaseModel.execute_query(
+            'SELECT * FROM questions WHERE category = %s',
+            (category,)
+        )
+        return cls._from_rows(rows)
 
     @staticmethod
     def update(question_id, question_text=None, difficulty=None, category=None):
         """Update question"""
-        conn = db.get_connection()
-        cursor = conn.cursor()
-
-        updates = []
-        params = []
-
-        if question_text is not None:
-            updates.append('question_text = %s')
-            params.append(question_text)
-        if difficulty is not None:
-            updates.append('difficulty = %s')
-            params.append(difficulty)
-        if category is not None:
-            updates.append('category = %s')
-            params.append(category)
-
-        if updates:
+        query, params = BaseModel.build_update_query(
+            'questions',
+            {'question_text': question_text, 'difficulty': difficulty, 'category': category}
+        )
+        if query:
             params.append(question_id)
-            query = f"UPDATE questions SET {', '.join(updates)} WHERE id = %s"
-            cursor.execute(query, params)
-            conn.commit()
-            result = cursor.rowcount > 0
-            db.close_connection(conn)
-            return result
-        db.close_connection(conn)
+            return BaseModel.execute_update(query, params)
         return False
 
     @staticmethod
     def delete(question_id):
         """Delete question"""
-        conn = db.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('DELETE FROM questions WHERE id = %s', (question_id,))
-        conn.commit()
-        result = cursor.rowcount > 0
-        db.close_connection(conn)
-        return result
+        return BaseModel.execute_update(
+            'DELETE FROM questions WHERE id = %s',
+            (question_id,)
+        )
 
     @staticmethod
     def count():
         """Count total questions"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
+        return BaseModel.execute_count('SELECT COUNT(*) as count FROM questions')
 
-        cursor.execute('SELECT COUNT(*) as count FROM questions')
-        result = cursor.fetchone()['count']
-        db.close_connection(conn)
-        return result
-
-    @staticmethod
-    def get_random_questions(count, difficulty=None):
+    @classmethod
+    def get_random_questions(cls, count, difficulty=None):
         """Get random questions, optionally filtered by difficulty"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
-
         if difficulty:
-            cursor.execute('''
-                SELECT * FROM questions 
-                WHERE difficulty = %s
-                ORDER BY RAND() 
-                LIMIT %s
-            ''', (difficulty, count))
+            rows = BaseModel.execute_query(
+                'SELECT * FROM questions WHERE difficulty = %s ORDER BY RAND() LIMIT %s',
+                (difficulty, count)
+            )
         else:
-            cursor.execute('''
-                SELECT * FROM questions 
-                ORDER BY RAND() 
-                LIMIT %s
-            ''', (count,))
-
-        rows = cursor.fetchall()
-        db.close_connection(conn)
-
-        return [Question(
-            id=row['id'],
-            question_text=row['question_text'],
-            difficulty=row['difficulty'],
-            category=row['category'],
-            created_at=row['created_at']
-        ) for row in rows]
+            rows = BaseModel.execute_query(
+                'SELECT * FROM questions ORDER BY RAND() LIMIT %s',
+                (count,)
+            )
+        return cls._from_rows(rows)
 
     @staticmethod
     def get_statistics(question_id):
-        """Get statistics for a specific question (moved from Controller)"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
+        """Get statistics for a specific question"""
+        # Total times answered
+        total_answers = BaseModel.execute_count(
+            'SELECT COUNT(*) as count FROM attempt_answers WHERE question_id = %s',
+            (question_id,)
+        )
 
-        # 1. Total times answered
-        cursor.execute('''
-            SELECT COUNT(*) as total_answers
-            FROM attempt_answers
-            WHERE question_id = %s
-        ''', (question_id,))
-        total_answers = cursor.fetchone()['total_answers']
+        # Correct answer count
+        correct_count = BaseModel.execute_count(
+            'SELECT COUNT(*) as count FROM attempt_answers WHERE question_id = %s AND is_correct = 1',
+            (question_id,)
+        )
 
-        # 2. Correct answer rate
-        cursor.execute('''
-            SELECT COUNT(*) as correct_count
-            FROM attempt_answers
-            WHERE question_id = %s AND is_correct = 1
-        ''', (question_id,))
-        correct_count = cursor.fetchone()['correct_count']
-
-        # 3. Option selection distribution
-        cursor.execute('''
+        # Option selection distribution
+        option_stats = BaseModel.execute_query('''
             SELECT 
                 o.id,
                 o.option_text,
@@ -220,10 +138,7 @@ class Question:
             WHERE o.question_id = %s
             GROUP BY o.id, o.option_text, o.is_correct
         ''', (question_id,))
-        option_stats = cursor.fetchall()
-        db.close_connection(conn)
 
-        # Trả về dictionary dữ liệu đã xử lý
         return {
             'total_answers': total_answers,
             'correct_count': correct_count,
@@ -233,11 +148,8 @@ class Question:
 
     @staticmethod
     def analyze_difficulty():
-        """Analyze actual difficulty based on answer statistics (moved from Controller)"""
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute('''
+        """Analyze actual difficulty based on answer statistics"""
+        return BaseModel.execute_query('''
             SELECT 
                 q.id,
                 q.question_text,
@@ -252,7 +164,3 @@ class Question:
             HAVING COUNT(aa.id) > 0
             ORDER BY success_rate ASC
         ''')
-
-        result = cursor.fetchall()
-        db.close_connection(conn)
-        return result
